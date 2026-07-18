@@ -1,0 +1,69 @@
+<svg width="1200" height="520" viewBox="0 0 1200 520" fill="none" xmlns="http://www.w3.org/2000/svg">
+  <defs>
+    <linearGradient id="bg" x1="66" y1="18" x2="1134" y2="502" gradientUnits="userSpaceOnUse">
+      <stop stop-color="#071321"/>
+      <stop offset="0.52" stop-color="#10142B"/>
+      <stop offset="1" stop-color="#18102A"/>
+    </linearGradient>
+    <linearGradient id="accent" x1="716" y1="117" x2="1065" y2="409" gradientUnits="userSpaceOnUse">
+      <stop stop-color="#5CE6FF"/>
+      <stop offset="0.46" stop-color="#5A7CFF"/>
+      <stop offset="1" stop-color="#FF687E"/>
+    </linearGradient>
+    <linearGradient id="folder" x1="741" y1="183" x2="1037" y2="385" gradientUnits="userSpaceOnUse">
+      <stop stop-color="#65E6FF"/>
+      <stop offset="0.56" stop-color="#4D83FF"/>
+      <stop offset="1" stop-color="#7558E8"/>
+    </linearGradient>
+    <radialGradient id="glow" cx="0" cy="0" r="1" gradientTransform="translate(931 265) rotate(180) scale(390 300)" gradientUnits="userSpaceOnUse">
+      <stop stop-color="#4C75FF" stop-opacity="0.35"/>
+      <stop offset="1" stop-color="#4C75FF" stop-opacity="0"/>
+    </radialGradient>
+    <filter id="shadow" x="648" y="85" width="506" height="394" filterUnits="userSpaceOnUse" color-interpolation-filters="sRGB">
+      <feDropShadow dx="0" dy="24" stdDeviation="24" flood-color="#020611" flood-opacity="0.55"/>
+    </filter>
+  </defs>
+
+  <rect x="1" y="1" width="1198" height="518" rx="35" fill="url(#bg)" stroke="#FFFFFF" stroke-opacity="0.11" stroke-width="2"/>
+  <rect x="1" y="1" width="1198" height="518" rx="35" fill="url(#glow)"/>
+  <circle cx="1130" cy="62" r="120" fill="#FF5F7A" fill-opacity="0.08"/>
+  <circle cx="61" cy="493" r="135" fill="#3EDBFF" fill-opacity="0.06"/>
+
+  <g font-family="-apple-system, BlinkMacSystemFont, Segoe UI, sans-serif">
+    <rect x="70" y="73" width="298" height="34" rx="17" fill="#FFFFFF" fill-opacity="0.07" stroke="#FFFFFF" stroke-opacity="0.12"/>
+    <circle cx="91" cy="90" r="5" fill="#67E9FF"/>
+    <text x="108" y="95" fill="#B9C9DF" font-size="13" font-weight="650" letter-spacing="1.4">NATIVE · PRIVATE · OPEN SOURCE</text>
+
+    <text x="68" y="208" fill="#F7FAFF" font-size="86" font-weight="750" letter-spacing="-4">aswas</text>
+    <text x="70" y="257" fill="#C6D2E3" font-size="25" font-weight="520">Your Finder workspace, exactly where you left it.</text>
+    <text x="70" y="294" fill="#8191AA" font-size="18">Capture, close, switch, and restore groups of Finder windows</text>
+    <text x="70" y="321" fill="#8191AA" font-size="18">from a focused macOS menu bar companion.</text>
+
+    <g font-size="14" font-weight="640">
+      <rect x="70" y="372" width="133" height="40" rx="20" fill="#5CE6FF" fill-opacity="0.11" stroke="#5CE6FF" stroke-opacity="0.32"/>
+      <text x="92" y="398" fill="#A9F3FF">Save &amp; Close</text>
+      <rect x="215" y="372" width="145" height="40" rx="20" fill="#6B76FF" fill-opacity="0.12" stroke="#7781FF" stroke-opacity="0.35"/>
+      <text x="238" y="398" fill="#C9CDFF">One-click Restore</text>
+      <rect x="372" y="372" width="145" height="40" rx="20" fill="#FF687E" fill-opacity="0.10" stroke="#FF758A" stroke-opacity="0.30"/>
+      <text x="396" y="398" fill="#FFD0D8">English + 中文</text>
+    </g>
+  </g>
+
+  <g filter="url(#shadow)">
+    <rect x="687" y="116" width="405" height="302" rx="33" fill="#111A31" stroke="#FFFFFF" stroke-opacity="0.14" stroke-width="2"/>
+    <rect x="707" y="136" width="365" height="262" rx="23" fill="#0B1224"/>
+    <circle cx="732" cy="159" r="5" fill="#FF6B7D"/>
+    <circle cx="750" cy="159" r="5" fill="#FFCB6B"/>
+    <circle cx="768" cy="159" r="5" fill="#66E6A5"/>
+    <rect x="911" y="149" width="137" height="20" rx="10" fill="#FFFFFF" fill-opacity="0.06"/>
+
+    <path d="M755 238C755 225.85 764.85 216 777 216H838L860 238H1003C1015.15 238 1025 247.85 1025 260V329C1025 341.15 1015.15 351 1003 351H777C764.85 351 755 341.15 755 329V238Z" fill="#172D63"/>
+    <path d="M740 258C740 245.85 749.85 236 762 236H828L850 258H987C999.15 258 1009 267.85 1009 280V349C1009 361.15 999.15 371 987 371H762C749.85 371 740 361.15 740 349V258Z" fill="#264E9B"/>
+    <path d="M725 278C725 265.85 734.85 256 747 256H814L836 278H970C982.15 278 992 287.85 992 300V369C992 381.15 982.15 391 970 391H747C734.85 391 725 381.15 725 369V278Z" fill="url(#folder)"/>
+    <rect x="749" y="306" width="147" height="11" rx="5.5" fill="#EAFBFF" fill-opacity="0.65"/>
+    <rect x="749" y="329" width="101" height="9" rx="4.5" fill="#EAFBFF" fill-opacity="0.28"/>
+
+    <path d="M968 226C1008 231 1039 265 1039 306C1039 349 1004 384 961 384" stroke="url(#accent)" stroke-width="15" stroke-linecap="round"/>
+    <path d="M971 203L944 225L976 242" stroke="#61E7FF" stroke-width="15" stroke-linecap="round" stroke-linejoin="round"/>
+  </g>
+</svg>
