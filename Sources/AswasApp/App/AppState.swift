@@ -169,8 +169,8 @@ final class AppState {
         }
     }
 
-    func deletePendingWorkspace() async {
-        guard let workspace = pendingDelete, beginOperation() else { return }
+    func deleteWorkspace(_ workspace: WorkspaceSnapshot) async {
+        guard beginOperation() else { return }
         pendingDelete = nil
         defer { endOperation() }
         do {
@@ -199,8 +199,7 @@ final class AppState {
         }
     }
 
-    func confirmReplace() async {
-        guard let pending = pendingReplace else { return }
+    func confirmReplace(_ pending: PendingReplace) async {
         pendingReplace = nil
         await performRestore(pending.workspace, mode: .replace)
     }

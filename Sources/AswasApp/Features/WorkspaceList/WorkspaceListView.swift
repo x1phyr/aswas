@@ -98,25 +98,27 @@ struct WorkspaceListView: View {
         .confirmationDialog(
             L10n.text("replace.title"),
             isPresented: replaceBinding,
-            titleVisibility: .visible
-        ) {
+            titleVisibility: .visible,
+            presenting: appState.pendingReplace
+        ) { pending in
             Button(L10n.text("replace.confirm"), role: .destructive) {
-                Task { await appState.confirmReplace() }
+                Task { await appState.confirmReplace(pending) }
             }
             Button(L10n.text("common.cancel"), role: .cancel) { appState.cancelReplace() }
-        } message: {
+        } message: { _ in
             Text(replaceMessage)
         }
         .confirmationDialog(
             L10n.text("workspace.delete_title"),
             isPresented: deleteBinding,
-            titleVisibility: .visible
-        ) {
+            titleVisibility: .visible,
+            presenting: appState.pendingDelete
+        ) { workspace in
             Button(L10n.text("common.delete"), role: .destructive) {
-                Task { await appState.deletePendingWorkspace() }
+                Task { await appState.deleteWorkspace(workspace) }
             }
             Button(L10n.text("common.cancel"), role: .cancel) { appState.pendingDelete = nil }
-        } message: {
+        } message: { _ in
             Text(L10n.text("workspace.delete_message"))
         }
     }
