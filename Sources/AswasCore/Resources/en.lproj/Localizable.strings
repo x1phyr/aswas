@@ -45,7 +45,7 @@
 "workspace.tab_count" = "%d tabs";
 "workspace.safe_restore" = "Safe to open alongside current windows";
 "workspace.restore_needs_permission" = "Check permissions before restoring";
-"workspace.selected_tab" = "Previously selected tab";
+"workspace.selected_tab" = "Selected when saved";
 "workspace.more_actions" = "More workspace actions";
 "workspace.permissions_ready" = "Finder and tab restore are ready";
 "workspace.permissions_attention" = "Permissions need attention";

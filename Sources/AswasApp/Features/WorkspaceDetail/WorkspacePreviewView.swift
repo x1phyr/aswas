@@ -190,8 +190,12 @@ private struct WindowPreviewSection: View {
                 .help(tab.path)
             if isSelected {
                 Label(L10n.text("workspace.selected_tab"), systemImage: "checkmark.circle.fill")
-                    .labelStyle(.iconOnly)
+                    .font(.caption.weight(.medium))
                     .foregroundStyle(Color.accentColor)
+                    .padding(.horizontal, 7)
+                    .padding(.vertical, 3)
+                    .background(Color.accentColor.opacity(0.12), in: Capsule())
+                    .fixedSize()
                     .help(L10n.text("workspace.selected_tab"))
             }
             Spacer(minLength: 10)

@@ -45,7 +45,7 @@
 "workspace.tab_count" = "%d 个标签页";
 "workspace.safe_restore" = "可安全追加恢复";
 "workspace.restore_needs_permission" = "恢复前需要检查权限";
-"workspace.selected_tab" = "上次选中的标签页";
+"workspace.selected_tab" = "上次选中";
 "workspace.more_actions" = "更多工作区操作";
 "workspace.permissions_ready" = "Finder 与标签页恢复已就绪";
 "workspace.permissions_attention" = "需要检查权限";
