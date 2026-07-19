@@ -103,9 +103,9 @@ placement on the fallback main display.
 
 ## 11. Permission-gated Finder tabs
 
-1. Without Accessibility permission, save a multi-tab Finder window and verify the active-folder fallback plus a clear warning.
+1. Without Accessibility permission, save a multi-tab Finder window and verify the save is rejected with a clear explanation; no workspace is overwritten and no Finder window closes.
 2. Grant Accessibility from Settings and create two Finder windows with multiple tabs, Unicode paths, and different selected tabs.
 3. Save and inspect the workspace detail: verify every folder, window grouping, tab order, and selected tab.
 4. Restore in Open mode and verify the same grouping, order, and selected tabs while unrelated windows remain open.
-5. Revoke Accessibility and verify existing multi-tab workspaces restore their first tab safely and report the additional tabs that could not be restored.
+5. Revoke Accessibility and verify an existing multi-tab workspace is not restored partially; the app requests permission and leaves current Finder windows unchanged.
 6. Repeat on each supported macOS release and in English and Simplified Chinese; AX role matching must not depend on localized labels.

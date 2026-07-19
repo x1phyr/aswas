@@ -96,7 +96,7 @@ The app updates immediately. Its interface uses native materials and follows you
 
 ## Finder capability note
 
-Finder's installed scripting dictionary exposes each Finder tab as a window-like entry, but does not expose the containing tab group. aswas groups entries that belong to the same physical window and saves every folder path. With Accessibility permission it also reads the visual tab order and selected tab, then rebuilds the group during restore. Without Accessibility, grouping and paths are still saved, while order and selection are best effort.
+Finder's installed scripting dictionary exposes each Finder tab as a window-like entry, but does not expose the containing tab group. aswas groups entries that belong to the same physical window and uses Accessibility to read the visual tab order and selected tab before rebuilding the group during restore. If reliable order is unavailable, a multi-tab save or update is rejected instead of persisting shuffled data; the previous workspace and current Finder windows remain unchanged.
 
 This limitation is documented and regression-tested in the [Finder capability matrix](Docs/FinderCapabilityMatrix.md).
 

@@ -16,7 +16,7 @@ proof of behavior on every supported OS release.
 | Close a specified window | Supported | In-process AppleScript `close window id` | Native cleanup closed only the returned window ID; the first loop-specifier attempt exposed error -1731 and was replaced. |
 | Read tabs | Supported | AppleScript entries + window grouping | Finder exposes each tab as a window-like entry. Entries sharing physical bounds are grouped without switching or modifying tabs. |
 | Read selected tab | Enhanced, permission-gated | AX value | The selected AX tab is recorded and restored after capture. |
-| Read tab order | Enhanced, permission-gated | AX child order | AX is read-only during capture. Without it, filtered AppleScript order is used as a best-effort fallback. |
+| Read tab order | Enhanced, permission-gated | AX child order | AX is read-only during capture. A multi-tab save is rejected if reliable order is unavailable. |
 | Create tabs | Enhanced, permission-gated | Accessibility keyboard event + AppleScript `target` | Additional tabs are created serially with a stabilization delay. |
 | Restore tab order | Enhanced, permission-gated | Sequential UI automation | Failures are isolated per path and reported. |
 | Restore selected tab | Enhanced, permission-gated | AX press | Falls back with a partial-restore warning if selection fails. |
@@ -28,4 +28,5 @@ proof of behavior on every supported OS release.
 AppleScript remains the reliable window-level baseline. Full tab fidelity is implemented
 as an explicitly permission-gated enhancement using AXUIElement for the tab strip and
 AppleScript for exact folder paths. If Accessibility is unavailable or Finder's UI changes,
-aswas retains the baseline snapshot and reports the reduced fidelity.
+aswas refuses to persist or overwrite a multi-tab snapshot, preserving the previous reliable
+workspace and leaving all Finder windows open.
