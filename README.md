@@ -70,7 +70,7 @@ The build script creates an ad-hoc signed app bundle with Hardened Runtime enabl
 1. Open the app and find the aswas icon in the menu bar.
 2. Choose **Save Current Workspace** while the Finder windows you want are open.
 3. Approve Finder Automation when macOS asks.
-4. To preserve complete Finder tab groups, open **Settings → Permissions** and grant Accessibility. Without it, window-level saving remains available.
+4. To preserve Finder tab groups, open **Settings → Permissions** and grant Accessibility. Without it, single-tab Finder windows remain usable, but saving or updating stops when a multi-tab window is detected because its order cannot be verified safely.
 5. Restore the workspace in **Open** mode, or use **Replace…** to preview and confirm which existing windows will close.
 
 ## How it protects your work
@@ -96,9 +96,11 @@ The app updates immediately. Its interface uses native materials and follows you
 
 ## Finder capability note
 
-Finder's installed scripting dictionary exposes each Finder tab as a window-like entry, but does not expose the containing tab group. aswas groups entries that belong to the same physical window and uses Accessibility to read the visual tab order and selected tab before rebuilding the group during restore. If reliable order is unavailable, a multi-tab save or update is rejected instead of persisting shuffled data; the previous workspace and current Finder windows remain unchanged.
+Finder's installed scripting dictionary exposes each Finder tab as a window-like entry, but does not expose the containing tab group. aswas currently groups candidate entries by shared bounds, then uses Accessibility tab titles and child order to reconstruct the visual group and selected tab. If reliable order is unavailable, a multi-tab save or update is rejected instead of persisting shuffled data; the previous workspace and current Finder windows remain unchanged.
 
-This limitation is documented and regression-tested in the [Finder capability matrix](Docs/FinderCapabilityMatrix.md).
+This reconstruction is still best effort. Separate windows can share identical bounds, different folders can have the same Finder title, and tab restoration relies on Finder UI automation. Treat those cases as release-test boundaries rather than guaranteed behavior.
+
+The verified baseline and the remaining edge cases are tracked in the [Finder capability matrix](Docs/FinderCapabilityMatrix.md) and [manual test plan](Docs/MVPManualTestPlan.md).
 
 ## Local data
 

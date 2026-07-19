@@ -14,6 +14,6 @@ Include the affected commit or version, macOS version, expected security boundar
 
 ## Security boundaries
 
-aswas stores workspace metadata locally and asks macOS for Finder Automation permission. It does not require Accessibility permission for the window-level workflow, and it does not provide cloud sync, analytics, or an account system.
+aswas stores workspace metadata locally and asks macOS for Finder Automation permission. Accessibility is not required for single-tab Finder windows, but it is required when a detected multi-tab workspace must be saved or restored without inventing tab order. The app does not provide cloud sync, analytics, or an account system.
 
 Reports involving save-before-close ordering, unintended Finder window closure, path disclosure, damaged-workspace handling, signing, or update integrity are especially useful.

@@ -40,9 +40,14 @@ writes are actor-isolated.
 2. Capture window ID, active target folder, bounds, and current view.
 3. Map Finder top-left coordinates to the current display descriptor.
 4. Save both absolute and normalized frames.
-5. Convert each public-API window target into one restorable `FinderTabState`.
-6. Add `tabsUnavailable` so the fidelity limit remains visible.
-7. Validate, encode, fsync, back up the previous file, and atomically replace it.
+5. Group AppleScript window-like entries into candidate physical windows using shared bounds.
+6. When Accessibility is granted, match each candidate to an AX window and reconstruct tab order and selection from the tab strip.
+7. Reject multi-tab capture with `tabsUnavailable` when order cannot be confirmed.
+8. Validate, encode, fsync, back up the previous file, and atomically replace it.
+
+The current grouping and ordering layer is heuristic: identical physical-window bounds and
+duplicate Finder tab titles can be ambiguous. A future hardening pass should make AX physical
+window identity primary and use bounds/title only as secondary matching signals.
 
 Finder window IDs are returned only as runtime references. They are never persisted as
 stable workspace identity because Finder can recycle them after restart.
@@ -56,7 +61,13 @@ stable workspace identity because Finder can recycle them after restart.
 5. Clamp every frame to the visible display area.
 6. In Replace mode, capture and precisely close current readable Finder window IDs.
 7. Create each window, then restore bounds and view mode independently.
-8. Return counts, skipped paths, warnings, and errors without failing unaffected windows.
+8. For multi-tab windows, focus the restored Finder window, request tabs serially, set each target, and restore the selected tab.
+9. Return counts, skipped paths, warnings, and errors without failing unaffected windows.
+
+The restore path currently selects an AX target primarily by expected frame and relies on a
+timed Command-T sequence. Overlapping windows and focus delays therefore remain explicit
+integration-test boundaries; posting a keyboard event must not be treated as proof that a new
+tab exists.
 
 `WorkspaceRestoreService` rejects a second restore while the first is running.
 

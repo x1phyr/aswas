@@ -50,8 +50,14 @@ credentials. Credentials are never stored in this repository.
 - Verify first-run Automation consent from the signed app bundle.
 - Verify permission denial, later grant, and revocation.
 - Verify Open and confirmed Replace modes.
+- Close the main window and verify menu-bar Open results, errors, and Replace confirmation remain visible.
 - Verify Save & Close never closes after a forced persistence failure.
 - Verify display removal and at least one real multi-display arrangement.
 - Confirm Finder tabs are described as best effort, not full fidelity.
+- Verify separate Finder windows with identical bounds are not merged into one tab group.
+- Verify duplicate tab titles are either matched unambiguously or rejected without writing.
+- Verify overlapping multi-tab windows restore tabs into the intended physical window.
+- Verify a failed Command-T is detected before changing the current tab target.
+- Verify a newer unsupported workspace Schema is preserved and reported as incompatible rather than damaged.
 - Confirm logs do not expose private paths in the release build.
 - Notarize, staple, and assess the exact artifact to distribute.

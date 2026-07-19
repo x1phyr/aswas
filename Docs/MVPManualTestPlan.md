@@ -109,3 +109,26 @@ placement on the fallback main display.
 4. Restore in Open mode and verify the same grouping, order, and selected tabs while unrelated windows remain open.
 5. Revoke Accessibility and verify an existing multi-tab workspace is not restored partially; the app requests permission and leaves current Finder windows unchanged.
 6. Repeat on each supported macOS release and in English and Simplified Chinese; AX role matching must not depend on localized labels.
+7. Open two independent Finder windows with exactly the same position and size. Verify they remain two windows after save and restore rather than becoming one tab group. This is a release blocker until it passes reliably.
+8. In one window, open two different folders that have the same final folder name. Verify capture either proves the order correctly or rejects the save; it must never silently accept an invented order.
+9. Save two multi-tab windows with overlapping frames. Restore them and verify every additional tab is attached to the intended window.
+10. During a disposable test, introduce enough Finder focus delay that Command-T does not create a tab. Verify aswas detects the missing tab instead of changing the existing selected tab and reporting success.
+
+## 12. Menu-bar presentation
+
+1. Close the aswas main window while leaving the menu-bar app running.
+2. Run an Open restore from the menu and verify the result or error is visible.
+3. Set Replace as the default mode, request restore from the menu, and verify a confirmation UI appears before any Finder window closes.
+4. Deny a permission request initiated from Settings and verify the explanation appears in the currently visible surface.
+
+The current implementation hosts shared notices and Replace confirmation in the main window,
+so the closed-main-window cases above are known review findings and release blockers.
+
+## 13. Schema compatibility
+
+1. Place a valid workspace JSON with a schema version newer than the running app in `workspaces/`.
+2. Verify the app does not describe it as damaged or silently discard it.
+3. Verify the original bytes remain recoverable and the user receives a version-compatibility explanation.
+
+The current repository isolates every decode failure into `corrupt/`, including a newer
+unsupported schema. Treat downgrade compatibility as a known issue until errors are classified.
