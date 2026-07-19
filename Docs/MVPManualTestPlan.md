@@ -101,9 +101,11 @@ placement on the fallback main display.
 - Run `codesign`, `spctl`, notarization, and stapling checks from `Docs/Release.md`.
 - Repeat first-run TCC testing with the exact notarized artifact.
 
-## Known expected limitation
+## 11. Permission-gated Finder tabs
 
-Finder tabs, tab order, and selected tab are not part of Finder's public scripting
-dictionary. The MVP restores the active folder of each captured window and displays a
-best-effort warning. Full tab fidelity must not be treated as a passing criterion until
-the Accessibility investigation is completed across supported OS and UI languages.
+1. Without Accessibility permission, save a multi-tab Finder window and verify the active-folder fallback plus a clear warning.
+2. Grant Accessibility from Settings and create two Finder windows with multiple tabs, Unicode paths, and different selected tabs.
+3. Save and inspect the workspace detail: verify every folder, window grouping, tab order, and selected tab.
+4. Restore in Open mode and verify the same grouping, order, and selected tabs while unrelated windows remain open.
+5. Revoke Accessibility and verify existing multi-tab workspaces restore their first tab safely and report the additional tabs that could not be restored.
+6. Repeat on each supported macOS release and in English and Simplified Chinese; AX role matching must not depend on localized labels.

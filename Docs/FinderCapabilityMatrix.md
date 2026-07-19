@@ -14,18 +14,18 @@ proof of behavior on every supported OS release.
 | Restore view mode | Supported for list view | AppleScript `current view` | The PoC-created window accepted `list view` and reported it back. Icon, column, and gallery still need individual coverage. |
 | Create a Finder window | Supported | In-process AppleScript `make new Finder window` | Native restore created a window targeting the repository folder. |
 | Close a specified window | Supported | In-process AppleScript `close window id` | Native cleanup closed only the returned window ID; the first loop-specifier attempt exposed error -1731 and was replaced. |
-| Read tabs | Not available in public dictionary | Accessibility candidate | Finder `sdef` contains no public tab class, element, or property. |
-| Read selected tab | Unverified | Accessibility candidate | Blocked until a deliberately authorized AX probe can inspect a tabbed Finder window. |
-| Read tab order | Unverified | Accessibility candidate | Same limitation; UI ordering may be OS-version-sensitive. |
-| Create tabs | Unverified | UI Scripting candidate | Would require Accessibility and UI actions; not promised for MVP yet. |
-| Restore tab order | Unverified | UI Scripting candidate | No public AppleScript API. Must be best effort if UI scripting is viable. |
-| Restore selected tab | Unverified | UI Scripting candidate | No public AppleScript API. |
-| Accessibility UI inspection | Permission required | System Events / AXUIElement | Current probe reported Accessibility disabled and correctly avoided inspecting Finder UI. |
+| Read tabs | Supported | AppleScript entries + window grouping | Finder exposes each tab as a window-like entry. Entries sharing physical bounds are grouped without switching or modifying tabs. |
+| Read selected tab | Enhanced, permission-gated | AX value | The selected AX tab is recorded and restored after capture. |
+| Read tab order | Enhanced, permission-gated | AX child order | AX is read-only during capture. Without it, filtered AppleScript order is used as a best-effort fallback. |
+| Create tabs | Enhanced, permission-gated | Accessibility keyboard event + AppleScript `target` | Additional tabs are created serially with a stabilization delay. |
+| Restore tab order | Enhanced, permission-gated | Sequential UI automation | Failures are isolated per path and reported. |
+| Restore selected tab | Enhanced, permission-gated | AX press | Falls back with a partial-restore warning if selection fails. |
+| Accessibility UI inspection | Permission required | AXUIElement | Requested explicitly in Settings; the window-only workflow remains available without it. |
 | Multi-display placement | Unverified | AppleScript + AppKit | Requires coordinate conversion tests with multiple display arrangements. |
 
 ## Current conclusion
 
-AppleScript is sufficient for the window-level MVP baseline: enumerate windows, capture
-the main directory, capture/restore bounds, capture view mode, create windows, and close
-precisely tracked windows. Finder tabs cannot be claimed as supported from the public
-dictionary. They remain an explicitly isolated, permission-gated best-effort track.
+AppleScript remains the reliable window-level baseline. Full tab fidelity is implemented
+as an explicitly permission-gated enhancement using AXUIElement for the tab strip and
+AppleScript for exact folder paths. If Accessibility is unavailable or Finder's UI changes,
+aswas retains the baseline snapshot and reports the reduced fidelity.

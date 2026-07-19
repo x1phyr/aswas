@@ -41,6 +41,7 @@ Finder 窗口本就是工作记忆的一部分：项目目录、参考资料、�
 - 工作区资料库：重命名、更新、恢复、替换和删除
 - 一键“恢复上一个工作区”，快速找回工作上下文
 - 感知显示器的窗口定位与屏幕外窗口纠正
+- 经辅助功能授权后保存并恢复 Finder 标签页、顺序和选中项
 - 在 Finder 支持的范围内恢复列表、图标、分栏和画廊视图
 - 英文、简体中文，以及“跟随系统”语言模式
 - 设置页内置 Finder 自动化权限指引
@@ -68,8 +69,9 @@ open build/Release/aswas.app
 
 1. 打开应用，在菜单栏找到 aswas 图标。
 2. 保留需要保存的 Finder 窗口，点击“保存当前工作区”。
-3. macOS 弹出提示时允许 Finder 自动化。窗口级工作流不需要“辅助功能”权限。
-4. 使用“打开”模式在现有窗口旁恢复；或选择“替换…”，预览并确认将关闭的现有窗口。
+3. macOS 弹出提示时允许 Finder 自动化。
+4. 如果需要完整保存 Finder 标签组，请进入“设置 → 权限”授予辅助功能权限；未授权时仍可使用窗口级保存。
+5. 使用“打开”模式在现有窗口旁恢复；或选择“替换…”，预览并确认将关闭的现有窗口。
 
 ## 它如何保护你的工作
 
@@ -94,7 +96,7 @@ open build/Release/aswas.app
 
 ## Finder 能力说明
 
-当前 macOS 中，Finder 已安装的公共脚本字典没有暴露标签页。aswas 因此会保存和恢复每个可读取 Finder 窗口的当前文件夹，并明确提示这是尽力恢复；项目**不会宣称支持完整标签页还原**。
+当前 macOS 中，Finder 脚本字典会把每个标签页暴露为类似独立窗口的条目，却不提供它们所属的标签组。aswas 会把属于同一物理窗口的条目重新分组并保存全部路径；获得辅助功能权限后，还会读取界面中的标签顺序和当前选中项，并在恢复时重建标签组。未授权时仍保存分组和路径，但顺序及选中项按尽力方式处理。
 
 该限制已记录并纳入回归测试，详见 [Finder 能力矩阵](Docs/FinderCapabilityMatrix.md)。
 
@@ -146,6 +148,7 @@ swift run aswas
 
 ## 文档
 
+- [完整功能与使用说明书](Docs/UserGuide.zh-CN.md)
 - [架构说明](Docs/Architecture.md)
 - [Finder 能力矩阵](Docs/FinderCapabilityMatrix.md)
 - [MVP 手动测试计划](Docs/MVPManualTestPlan.md)
@@ -159,7 +162,7 @@ swift run aswas
 - 提供签名并公证的可下载版本
 - 键盘快捷键与更快的工作区切换
 - 可选的工作区导入与导出
-- 如果 Apple 提供稳定公共标签页 API，进一步提升 Finder 还原精度
+- 扩大 Finder Accessibility 标签结构的跨系统版本验证
 
 欢迎提交想法和边界清晰的 Pull Request。提交前请先阅读 [CONTRIBUTING.md](CONTRIBUTING.md)。
 

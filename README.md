@@ -41,6 +41,7 @@ Finder windows are part of your working memory: the project folder, references, 
 - Named workspace library with rename, update, restore, replace, and delete
 - One-click **Restore Last Workspace** for rapid context switching
 - Display-aware window placement with off-screen recovery
+- Permission-gated Finder tab capture, ordering, selection, and restore
 - Finder list, icon, column, and gallery view restoration where supported
 - English, Simplified Chinese, and **Follow System** language modes
 - Finder Automation permission guidance built into Settings
@@ -68,8 +69,9 @@ The build script creates an ad-hoc signed app bundle with Hardened Runtime enabl
 
 1. Open the app and find the aswas icon in the menu bar.
 2. Choose **Save Current Workspace** while the Finder windows you want are open.
-3. Approve Finder Automation when macOS asks. aswas does not require Accessibility access for its window-level workflow.
-4. Restore the workspace in **Open** mode, or use **Replace…** to preview and confirm which existing windows will close.
+3. Approve Finder Automation when macOS asks.
+4. To preserve complete Finder tab groups, open **Settings → Permissions** and grant Accessibility. Without it, window-level saving remains available.
+5. Restore the workspace in **Open** mode, or use **Replace…** to preview and confirm which existing windows will close.
 
 ## How it protects your work
 
@@ -94,7 +96,7 @@ The app updates immediately. Its interface uses native materials and follows you
 
 ## Finder capability note
 
-Finder's installed public scripting dictionary does not expose tabs on current macOS versions. aswas therefore saves and restores the active folder of each readable Finder window and reports a clear best-effort warning. It does **not** claim full tab fidelity.
+Finder's installed scripting dictionary exposes each Finder tab as a window-like entry, but does not expose the containing tab group. aswas groups entries that belong to the same physical window and saves every folder path. With Accessibility permission it also reads the visual tab order and selected tab, then rebuilds the group during restore. Without Accessibility, grouping and paths are still saved, while order and selection are best effort.
 
 This limitation is documented and regression-tested in the [Finder capability matrix](Docs/FinderCapabilityMatrix.md).
 
@@ -146,6 +148,7 @@ The test suite covers domain validation, migrations, capture mapping, safe close
 
 ## Documentation
 
+- [Complete Chinese user guide](Docs/UserGuide.zh-CN.md)
 - [Architecture](Docs/Architecture.md)
 - [Finder capability matrix](Docs/FinderCapabilityMatrix.md)
 - [MVP manual test plan](Docs/MVPManualTestPlan.md)
@@ -159,7 +162,7 @@ The test suite covers domain validation, migrations, capture mapping, safe close
 - Signed and notarized downloadable releases
 - Keyboard shortcuts and faster workspace switching
 - Optional workspace export and import
-- Deeper Finder fidelity if Apple exposes a stable public tab API
+- Broader cross-version validation for Finder's Accessibility tab structure
 
 Ideas and focused pull requests are welcome. Please read [CONTRIBUTING.md](CONTRIBUTING.md) before opening one.
 
