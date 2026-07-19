@@ -13,7 +13,7 @@ public struct FinderCapabilityDetector: Sendable {
             accessibilityPermission: AXIsProcessTrusted() ? .granted : .required,
             canCaptureWindows: automationGranted,
             canRestoreWindows: automationGranted,
-            canCaptureTabs: automationGranted,
+            canCaptureTabs: automationGranted && AXIsProcessTrusted(),
             canRestoreTabs: automationGranted && AXIsProcessTrusted()
         )
     }

@@ -233,4 +233,70 @@ struct WorkspaceCaptureServiceTests {
         #expect(result.managedWindows == [FinderWindowReference(windowID: 7)])
         #expect(try await repository.list().map(\.id) == [result.workspace.id])
     }
+
+    @Test
+    func refusesToPersistAnUnreliableTabOrder() async throws {
+        let directory = try makeTemporaryDirectory()
+        defer { try? FileManager.default.removeItem(at: directory) }
+        let repository = JSONWorkspaceRepository(rootDirectory: directory)
+        let integration = CaptureIntegrationStub(
+            result: FinderCaptureResult(
+                state: makeWorkspace().finder,
+                managedWindows: [FinderWindowReference(windowID: 7)],
+                warnings: [
+                    WorkspaceWarning(
+                        code: .tabsUnavailable,
+                        message: "Tab order was unavailable."
+                    )
+                ]
+            )
+        )
+        let service = WorkspaceCaptureService(
+            integration: integration,
+            repository: repository
+        )
+
+        do {
+            _ = try await service.createWorkspace(named: "Must Keep Tab Order")
+            Issue.record("The save should have required reliable tab ordering.")
+        } catch let error as FinderIntegrationError {
+            #expect(error == .tabOrderUnavailable)
+        }
+
+        #expect(try await repository.list().isEmpty)
+    }
+
+    @Test
+    func keepsExistingWorkspaceWhenUpdatedTabOrderIsUnreliable() async throws {
+        let directory = try makeTemporaryDirectory()
+        defer { try? FileManager.default.removeItem(at: directory) }
+        let repository = JSONWorkspaceRepository(rootDirectory: directory)
+        let existing = makeWorkspace(name: "Existing")
+        try await repository.save(existing)
+        let integration = CaptureIntegrationStub(
+            result: FinderCaptureResult(
+                state: FinderWorkspaceState(windows: []),
+                managedWindows: [],
+                warnings: [
+                    WorkspaceWarning(
+                        code: .tabsUnavailable,
+                        message: "Tab order was unavailable."
+                    )
+                ]
+            )
+        )
+        let service = WorkspaceCaptureService(
+            integration: integration,
+            repository: repository
+        )
+
+        do {
+            _ = try await service.updateWorkspace(id: existing.id)
+            Issue.record("The update should not overwrite a reliable workspace.")
+        } catch let error as FinderIntegrationError {
+            #expect(error == .tabOrderUnavailable)
+        }
+
+        #expect(try await repository.load(id: existing.id) == existing)
+    }
 }

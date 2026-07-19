@@ -14,6 +14,7 @@ public actor WorkspaceCaptureService {
 
     public func createWorkspace(named name: String) async throws -> WorkspaceCaptureResult {
         let capture = try await integration.captureCurrentState()
+        try requireReliableTabOrder(capture)
         let now = Date()
         let workspace = WorkspaceSnapshot(
             name: name.trimmingCharacters(in: .whitespacesAndNewlines),
@@ -35,6 +36,7 @@ public actor WorkspaceCaptureService {
     public func updateWorkspace(id: UUID) async throws -> WorkspaceCaptureResult {
         let existing = try await repository.load(id: id)
         let capture = try await integration.captureCurrentState()
+        try requireReliableTabOrder(capture)
         var updated = existing
         updated.finder = capture.state
         updated.updatedAt = Date()
@@ -47,5 +49,14 @@ public actor WorkspaceCaptureService {
             managedWindows: capture.managedWindows,
             warnings: capture.warnings
         )
+    }
+
+    private func requireReliableTabOrder(_ capture: FinderCaptureResult) throws {
+        guard !capture.warnings.contains(where: { $0.code == .tabsUnavailable }) else {
+            // The window grouping and paths are useful for previews, but persisting them
+            // would make an arbitrary Finder script order look authoritative. Refuse the
+            // save so a later restore cannot silently shuffle the user's tabs.
+            throw FinderIntegrationError.tabOrderUnavailable
+        }
     }
 }

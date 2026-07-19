@@ -119,6 +119,7 @@
 "error.empty_name" = "The workspace name cannot be empty.";
 "error.empty_workspace" = "No readable Finder windows were found.";
 "error.accessibility_required" = "Accessibility permission is required to restore multiple Finder tabs. Nothing was restored.";
+"error.tab_order_unavailable" = "A multi-tab Finder window was detected, but its tab order could not be read reliably. Nothing was saved, overwritten, or closed. Grant Accessibility permission to aswas, then save again.";
 "error.empty_window" = "A Finder window has no restorable folder.";
 "error.invalid_tab_index" = "A Finder window has an invalid selected tab index (%d).";
 "error.non_absolute_path" = "The saved folder path is not absolute: %@";

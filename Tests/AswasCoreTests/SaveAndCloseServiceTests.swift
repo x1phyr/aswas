@@ -93,7 +93,7 @@ struct SaveAndCloseServiceTests {
                 state: makeWorkspace().finder,
                 managedWindows: references,
                 warnings: [
-                    WorkspaceWarning(code: .tabsUnavailable, message: "Tabs are best effort.")
+                    WorkspaceWarning(code: .displayUnavailable, message: "Display is best effort.")
                 ]
             )
         )

@@ -119,6 +119,7 @@
 "error.empty_name" = "工作区名称不能为空。";
 "error.empty_workspace" = "没有找到可读取的 Finder 窗口。";
 "error.accessibility_required" = "恢复多个 Finder 标签页需要辅助功能权限。当前未执行恢复。";
+"error.tab_order_unavailable" = "检测到多标签 Finder 窗口，但无法可靠读取标签顺序。本次未保存、未覆盖，也没有关闭任何窗口。请授予 aswas 辅助功能权限后重新保存。";
 "error.empty_window" = "某个 Finder 窗口没有可恢复的文件夹。";
 "error.invalid_tab_index" = "某个 Finder 窗口的选中标签索引无效（%d）。";
 "error.non_absolute_path" = "保存的文件夹路径不是绝对路径：%@";
