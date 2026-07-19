@@ -1,84 +1,46 @@
+import AppKit
 import AswasCore
 import SwiftUI
 
 struct WorkspaceListView: View {
     @Bindable var appState: AppState
-    @AppStorage("defaultRestoreMode") private var defaultRestoreMode = RestoreMode.open.rawValue
-    @State private var selectedWorkspace: WorkspaceSnapshot?
+    @Environment(\.openSettings) private var openSettings
+    @State private var selectedWorkspaceID: UUID?
+    @State private var searchText = ""
     @State private var promptMode: NamePromptMode?
     @State private var draftName = ""
 
-    private var restoreMode: RestoreMode {
-        RestoreMode(rawValue: defaultRestoreMode) ?? .open
-    }
-
     var body: some View {
-        NavigationStack {
-            Group {
-                if appState.workspaces.isEmpty {
-                    ContentUnavailableView {
-                        Label(L10n.text("empty.title"), systemImage: "folder.badge.plus")
-                    } description: {
-                        Text(L10n.text("empty.description"))
-                    } actions: {
-                        Button(L10n.text("save.current_workspace")) { beginSave(closeAfterSave: false) }
-                    }
-                } else {
-                    List(appState.workspaces) { workspace in
-                        WorkspaceRow(
-                            workspace: workspace,
-                            isOperating: appState.isOperating,
-                            restore: {
-                                Task { await appState.requestRestore(workspace, mode: restoreMode) }
-                            }
-                        )
-                        .contentShape(Rectangle())
-                        .onTapGesture { selectedWorkspace = workspace }
-                        .contextMenu {
-                            Button(L10n.text("workspace.restore_open")) {
-                                Task { await appState.requestRestore(workspace, mode: .open) }
-                            }
-                            Button(L10n.text("workspace.restore_replace")) {
-                                Task { await appState.requestRestore(workspace, mode: .replace) }
-                            }
-                            Divider()
-                            Button(L10n.text("workspace.update")) {
-                                Task { await appState.updateWorkspace(workspace) }
-                            }
-                            Button(L10n.text("workspace.update_close")) {
-                                Task { await appState.updateWorkspaceAndClose(workspace) }
-                            }
-                            Button(L10n.text("workspace.rename")) {
-                                draftName = workspace.name
-                                promptMode = .rename(workspace)
-                            }
-                            Divider()
-                            Button(L10n.text("workspace.delete"), role: .destructive) {
-                                appState.pendingDelete = workspace
-                            }
-                        }
-                    }
-                    .listStyle(.inset)
-                }
-            }
-            .navigationTitle("aswas")
-            .toolbar {
-                ToolbarItemGroup {
-                    if appState.isOperating {
-                        ProgressView().controlSize(.small)
-                    }
-                    Menu {
-                        Button(L10n.text("menu.save_current")) { beginSave(closeAfterSave: false) }
-                        Button(L10n.text("menu.save_close")) { beginSave(closeAfterSave: true) }
-                    } label: {
-                        Label(L10n.text("save.workspace_button"), systemImage: "plus")
-                    }
-                    .disabled(appState.isOperating)
+        NavigationSplitView {
+            workspaceLibrary
+                .navigationSplitViewColumnWidth(min: 260, ideal: 320, max: 400)
+        } detail: {
+            if let workspace = selectedWorkspace {
+                WorkspacePreviewView(
+                    workspace: workspace,
+                    appState: appState,
+                    rename: { beginRename(workspace) },
+                    delete: { appState.pendingDelete = workspace }
+                )
+                .id(workspace.id)
+            } else {
+                ContentUnavailableView {
+                    Label(L10n.text("workspace.select_title"), systemImage: "square.stack.3d.up")
+                } description: {
+                    Text(L10n.text("workspace.select_description"))
                 }
             }
         }
-        .sheet(item: $selectedWorkspace) { workspace in
-            WorkspaceDetailView(workspace: workspace, appState: appState)
+        .navigationSplitViewStyle(.balanced)
+        .toolbar {
+            ToolbarItem(placement: .primaryAction) {
+                saveMenu
+            }
+        }
+        .onChange(of: appState.workspaces.map(\.id), initial: true) { _, workspaceIDs in
+            if selectedWorkspaceID == nil || !workspaceIDs.contains(selectedWorkspaceID!) {
+                selectedWorkspaceID = workspaceIDs.first
+            }
         }
         .alert(promptTitle, isPresented: promptBinding) {
             TextField(L10n.text("common.workspace_name"), text: $draftName)
@@ -121,6 +83,122 @@ struct WorkspaceListView: View {
         } message: { _ in
             Text(L10n.text("workspace.delete_message"))
         }
+    }
+
+    private var workspaceLibrary: some View {
+        Group {
+            if appState.workspaces.isEmpty {
+                ContentUnavailableView {
+                    Label(L10n.text("empty.title"), systemImage: "folder.badge.plus")
+                } description: {
+                    Text(L10n.text("empty.description"))
+                } actions: {
+                    Button(L10n.text("save.current_workspace")) {
+                        beginSave(closeAfterSave: false)
+                    }
+                }
+            } else {
+                List(filteredWorkspaces, selection: $selectedWorkspaceID) { workspace in
+                    WorkspaceRow(workspace: workspace)
+                        .tag(workspace.id)
+                        .contextMenu { workspaceMenu(for: workspace) }
+                }
+                .listStyle(.sidebar)
+                .searchable(
+                    text: $searchText,
+                    placement: .sidebar,
+                    prompt: L10n.text("workspace.search_prompt")
+                )
+            }
+        }
+        .navigationTitle(L10n.text("workspace.library_title"))
+        .safeAreaInset(edge: .bottom) {
+            permissionFooter
+        }
+    }
+
+    private var saveMenu: some View {
+        Menu {
+            Button(L10n.text("menu.save_current")) { beginSave(closeAfterSave: false) }
+            Button(L10n.text("menu.save_close")) { beginSave(closeAfterSave: true) }
+        } label: {
+            Text(L10n.text("save.current_workspace"))
+        }
+        .help(L10n.text("save.current_workspace"))
+        .disabled(appState.isOperating)
+    }
+
+    private var permissionFooter: some View {
+        VStack(spacing: 0) {
+            Divider()
+            HStack(spacing: 8) {
+                Image(systemName: permissionsReady ? "checkmark.circle.fill" : "exclamationmark.circle.fill")
+                    .foregroundStyle(permissionsReady ? Color.green : Color.orange)
+                VStack(alignment: .leading, spacing: 1) {
+                    Text(L10n.text(permissionsReady
+                        ? "workspace.permissions_ready"
+                        : "workspace.permissions_attention"))
+                        .font(.caption.weight(.medium))
+                    Text(L10n.text("workspace.permissions_description"))
+                        .font(.caption2)
+                        .foregroundStyle(.secondary)
+                        .lineLimit(2)
+                }
+                Spacer(minLength: 4)
+                Button(L10n.text("workspace.manage_permissions")) {
+                    NSApp.activate(ignoringOtherApps: true)
+                    openSettings()
+                }
+                .buttonStyle(.borderless)
+                .font(.caption)
+            }
+            .padding(.horizontal, 12)
+            .padding(.vertical, 10)
+            .background(.bar)
+        }
+    }
+
+    @ViewBuilder
+    private func workspaceMenu(for workspace: WorkspaceSnapshot) -> some View {
+        Button(L10n.text("workspace.detail_restore_open")) {
+            Task { await appState.requestRestore(workspace, mode: .open) }
+        }
+        Button(L10n.text("workspace.detail_restore_replace")) {
+            Task { await appState.requestRestore(workspace, mode: .replace) }
+        }
+        Divider()
+        Button(L10n.text("workspace.detail_update")) {
+            Task { await appState.updateWorkspace(workspace) }
+        }
+        Button(L10n.text("workspace.detail_update_close")) {
+            Task { await appState.updateWorkspaceAndClose(workspace) }
+        }
+        Button(L10n.text("workspace.rename")) { beginRename(workspace) }
+        Divider()
+        Button(L10n.text("workspace.delete"), role: .destructive) {
+            appState.pendingDelete = workspace
+        }
+    }
+
+    private var selectedWorkspace: WorkspaceSnapshot? {
+        guard let selectedWorkspaceID else { return nil }
+        return appState.workspaces.first { $0.id == selectedWorkspaceID }
+    }
+
+    private var filteredWorkspaces: [WorkspaceSnapshot] {
+        let query = searchText.trimmingCharacters(in: .whitespacesAndNewlines)
+        guard !query.isEmpty else { return appState.workspaces }
+        return appState.workspaces.filter { workspace in
+            workspace.name.localizedCaseInsensitiveContains(query)
+                || workspace.finder.windows.flatMap(\.tabs).contains { tab in
+                    tab.path.localizedCaseInsensitiveContains(query)
+                }
+        }
+    }
+
+    private var permissionsReady: Bool {
+        appState.capabilities.automationPermission == .granted
+            && appState.capabilities.accessibilityPermission == .granted
     }
 
     private var promptBinding: Binding<Bool> {
@@ -193,6 +271,11 @@ struct WorkspaceListView: View {
             Date().formatted(date: .abbreviated, time: .shortened)
         )
         promptMode = .save(closeAfterSave)
+    }
+
+    private func beginRename(_ workspace: WorkspaceSnapshot) {
+        draftName = workspace.name
+        promptMode = .rename(workspace)
     }
 
     private func submitPrompt() {

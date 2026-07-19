@@ -34,8 +34,23 @@
 "empty.title" = "No Workspaces Yet";
 "empty.description" = "Save your current Finder windows, then restore them whenever you need.";
 
-"workspace.summary" = "%d windows · %d folders";
-"workspace.detail_summary" = "%d windows · %d restorable folders";
+"workspace.summary" = "%d windows · %d tabs";
+"workspace.detail_summary" = "%d windows · %d tabs";
+"workspace.library_title" = "Workspaces";
+"workspace.search_prompt" = "Search workspaces or paths";
+"workspace.select_title" = "Select a Workspace";
+"workspace.select_description" = "Choose a workspace on the left to preview its saved windows and tabs.";
+"workspace.window_preview" = "Window Preview";
+"workspace.tab_order_hint" = "Tabs appear in saved order";
+"workspace.tab_count" = "%d tabs";
+"workspace.safe_restore" = "Safe to open alongside current windows";
+"workspace.restore_needs_permission" = "Check permissions before restoring";
+"workspace.selected_tab" = "Previously selected tab";
+"workspace.more_actions" = "More workspace actions";
+"workspace.permissions_ready" = "Finder and tab restore are ready";
+"workspace.permissions_attention" = "Permissions need attention";
+"workspace.permissions_description" = "Tab order and restore need complete access";
+"workspace.manage_permissions" = "Manage…";
 "workspace.saved_at" = "Saved %@";
 "workspace.saved_just_now" = "Saved just now";
 "workspace.restore" = "Restore";

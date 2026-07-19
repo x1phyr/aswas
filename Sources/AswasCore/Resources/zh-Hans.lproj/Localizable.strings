@@ -34,8 +34,23 @@
 "empty.title" = "还没有工作区";
 "empty.description" = "保存当前 Finder 窗口，之后随时恢复工作现场。";
 
-"workspace.summary" = "%d 个窗口 · %d 个文件夹";
-"workspace.detail_summary" = "%d 个窗口 · %d 个可恢复文件夹";
+"workspace.summary" = "%d 个窗口 · %d 个标签页";
+"workspace.detail_summary" = "%d 个窗口 · %d 个标签页";
+"workspace.library_title" = "工作区";
+"workspace.search_prompt" = "搜索工作区或路径";
+"workspace.select_title" = "选择一个工作区";
+"workspace.select_description" = "在左侧选择工作区，查看保存的窗口和标签页。";
+"workspace.window_preview" = "窗口预览";
+"workspace.tab_order_hint" = "标签页按保存顺序排列";
+"workspace.tab_count" = "%d 个标签页";
+"workspace.safe_restore" = "可安全追加恢复";
+"workspace.restore_needs_permission" = "恢复前需要检查权限";
+"workspace.selected_tab" = "上次选中的标签页";
+"workspace.more_actions" = "更多工作区操作";
+"workspace.permissions_ready" = "Finder 与标签页恢复已就绪";
+"workspace.permissions_attention" = "需要检查权限";
+"workspace.permissions_description" = "标签页顺序与恢复需要完整授权";
+"workspace.manage_permissions" = "管理…";
 "workspace.saved_at" = "保存于%@";
 "workspace.saved_just_now" = "保存于刚刚";
 "workspace.restore" = "恢复";

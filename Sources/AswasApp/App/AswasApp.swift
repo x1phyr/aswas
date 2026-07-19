@@ -20,10 +20,10 @@ struct AswasApp: App {
         Window("aswas", id: "main") {
             WorkspaceListView(appState: appState)
                 .id(appLanguage)
-                .frame(minWidth: 520, minHeight: 440)
+                .frame(minWidth: 860, minHeight: 560)
                 .task { await appState.refresh() }
         }
-        .defaultSize(width: 600, height: 620)
+        .defaultSize(width: 1120, height: 720)
 
         Settings {
             SettingsView(appState: appState)

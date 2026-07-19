@@ -25,6 +25,6 @@ struct LocalizationTests {
             arguments: [3, 8]
         )
 
-        #expect(chinese == "3 个窗口 · 8 个文件夹")
+        #expect(chinese == "3 个窗口 · 8 个标签页")
     }
 }
