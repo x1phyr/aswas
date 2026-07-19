@@ -36,11 +36,25 @@
 
 "workspace.summary" = "%d 个窗口 · %d 个文件夹";
 "workspace.detail_summary" = "%d 个窗口 · %d 个可恢复文件夹";
+"workspace.saved_at" = "保存于%@";
+"workspace.saved_just_now" = "保存于刚刚";
 "workspace.restore" = "恢复";
 "workspace.restore_open" = "恢复（追加）";
 "workspace.restore_replace" = "恢复（替换）…";
 "workspace.update" = "从当前窗口更新";
 "workspace.update_close" = "更新并关闭";
+"workspace.detail_update_group" = "更新已保存内容";
+"workspace.detail_update_description" = "用当前 Finder 窗口覆盖这个工作区";
+"workspace.detail_update" = "用当前窗口覆盖";
+"workspace.detail_update_close" = "覆盖并关闭窗口";
+"workspace.detail_update_help" = "用当前打开的 Finder 窗口和标签页覆盖这个工作区；保存后保留当前窗口。";
+"workspace.detail_update_close_help" = "覆盖这个工作区；保存成功后关闭刚才捕获的 Finder 窗口。";
+"workspace.detail_restore_group" = "恢复这个工作区";
+"workspace.detail_restore_description" = "选择是否保留当前 Finder 窗口";
+"workspace.detail_restore_open" = "保留当前窗口并打开";
+"workspace.detail_restore_replace" = "关闭当前窗口并恢复…";
+"workspace.detail_restore_open_help" = "保留当前 Finder 窗口，并在旁边打开这个工作区。";
+"workspace.detail_restore_replace_help" = "预览并确认后，关闭当前可读取的 Finder 窗口，再打开这个工作区。";
 "workspace.rename" = "重命名…";
 "workspace.delete" = "删除…";
 "workspace.rename_title" = "重命名工作区";
@@ -48,6 +62,7 @@
 "workspace.delete_title" = "删除工作区？";
 "workspace.delete_message" = "删除前会先备份工作区文件。";
 "workspace.open_finder" = "在 Finder 中打开";
+"workspace.open_finder_short" = "打开";
 
 "replace.title" = "替换当前 Finder 窗口？";
 "replace.confirm" = "关闭当前窗口并恢复";
@@ -67,8 +82,9 @@
 "settings.finder_automation" = "Finder 自动化";
 "settings.accessibility" = "辅助功能";
 "settings.request_permission" = "请求 Finder 权限";
+"settings.request_accessibility" = "请求辅助功能权限";
 "settings.check_again" = "重新检查";
-"settings.accessibility_explanation" = "可靠的窗口级 MVP 不需要辅助功能权限。Finder 标签页仍是尽力恢复，当前不宣称完整支持。";
+"settings.accessibility_explanation" = "辅助功能权限用于完整保存和恢复 Finder 标签页。未授权时，aswas 仍会保存每个窗口当前活动的文件夹。";
 "settings.open_data" = "打开工作区数据文件夹";
 "status.granted" = "已授权";
 "status.not_requested" = "尚未请求";
@@ -80,6 +96,10 @@
 
 "notice.permission_title" = "需要 Finder 权限";
 "notice.permission_message" = "请在“系统设置 › 隐私与安全性 › 自动化”中允许 aswas 控制 Finder，然后选择“重新检查”。";
+"notice.accessibility_title" = "需要辅助功能权限";
+"notice.accessibility_message" = "请在“系统设置 › 隐私与安全性 › 辅助功能”中启用 aswas，然后选择“重新检查”。未授权时仍可使用窗口级保存。";
+"notice.accessibility_restore_title" = "恢复标签页需要辅助功能权限";
+"notice.accessibility_restore_message" = "本工作区包含多个 Finder 标签页。请在“系统设置 › 隐私与安全性 › 辅助功能”中启用 aswas，然后重新点击恢复。当前未执行恢复，现有 Finder 窗口不会改变。";
 "notice.saved_close_title" = "%@ 已保存并关闭";
 "notice.saved_close_message" = "已保存 %d 个窗口，关闭 %d 个。%@";
 "notice.saved_title" = "%@ 已保存";
@@ -98,6 +118,7 @@
 "error.schema_unsupported" = "不支持工作区 Schema 版本 %d。";
 "error.empty_name" = "工作区名称不能为空。";
 "error.empty_workspace" = "没有找到可读取的 Finder 窗口。";
+"error.accessibility_required" = "恢复多个 Finder 标签页需要辅助功能权限。当前未执行恢复。";
 "error.empty_window" = "某个 Finder 窗口没有可恢复的文件夹。";
 "error.invalid_tab_index" = "某个 Finder 窗口的选中标签索引无效（%d）。";
 "error.non_absolute_path" = "保存的文件夹路径不是绝对路径：%@";
@@ -118,13 +139,15 @@
 
 "warning.window_invalid_position" = "某个 Finder 窗口的位置数据无效，已跳过。";
 "warning.window_invalid_dimensions" = "某个 Finder 窗口的尺寸无效，已跳过。";
-"warning.tabs_unavailable_capture" = "Finder 的公开 AppleScript API 不提供标签页；当前只保存每个窗口的活动文件夹。";
+"warning.tabs_unavailable_capture" = "Finder 标签文件夹已按窗口分组，但无法确认标签顺序或当前选中项。请授予辅助功能权限并重新启动 aswas，以获得完整还原。";
 "warning.display_capture" = "无法读取显示器信息；窗口位置已保存，但没有显示器匹配数据。";
 "warning.window_no_folder" = "某个已保存的 Finder 窗口没有可恢复文件夹。";
 "warning.window_create" = "无法创建某个 Finder 窗口。";
 "warning.frame_restore" = "某个 Finder 窗口已打开，但无法恢复保存的位置。";
 "warning.view_restore" = "某个 Finder 窗口已打开，但无法恢复保存的显示模式。";
 "warning.extra_tabs" = "公开 API 无法恢复另外 %d 个 Finder 标签页。";
+"warning.tab_create" = "无法恢复某个 Finder 标签页：%@";
+"warning.tab_selection" = "Finder 标签页已恢复，但无法切换到之前选中的标签页。";
 "warning.restore_permission" = "恢复工作区需要 Finder 自动化权限。";
 "warning.close_failed" = "无法关闭某个已保存的 Finder 窗口。";
 "warning.path_skipped" = "某个保存的文件夹不可用，已跳过。";

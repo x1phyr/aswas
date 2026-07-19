@@ -1,9 +1,11 @@
+import ApplicationServices
 import Foundation
 
 public actor FinderAppleScriptIntegration: FinderWorkspaceIntegration {
     private let scriptRunner: AppleScriptRunner
     private let capabilityDetector: FinderCapabilityDetector
     private let displayProvider: any DisplaySnapshotProviding
+    private let tabController: FinderAccessibilityTabController
     private let decoder: JSONDecoder
 
     public init(
@@ -14,6 +16,7 @@ public actor FinderAppleScriptIntegration: FinderWorkspaceIntegration {
         self.scriptRunner = scriptRunner
         self.capabilityDetector = capabilityDetector
         self.displayProvider = displayProvider
+        self.tabController = FinderAccessibilityTabController()
         self.decoder = JSONDecoder()
     }
 
@@ -27,6 +30,10 @@ public actor FinderAppleScriptIntegration: FinderWorkspaceIntegration {
         capabilityDetector.automationPermission(askUserIfNeeded: true)
     }
 
+    public func requestAccessibilityPermission() async -> AccessibilityPermissionStatus {
+        capabilityDetector.requestAccessibilityPermission()
+    }
+
     public func captureCurrentState() async throws -> FinderCaptureResult {
         do {
             let output = try await scriptRunner.runBundledScript(named: "finder-capture")
@@ -34,8 +41,16 @@ public actor FinderAppleScriptIntegration: FinderWorkspaceIntegration {
                 throw FinderIntegrationError.malformedResponse
             }
             let payload = try decoder.decode(FinderCapturePayload.self, from: data)
+            let tabSnapshots = tabController.captureTabs(for: payload.windows)
+            AswasLog.capture.info(
+                "Captured complete tab groups for \(tabSnapshots.count) of \(payload.windows.count) Finder windows"
+            )
             let displays = await displayProvider.snapshot()
-            let result = try FinderCapturePayloadMapper.map(payload, displays: displays)
+            let result = try FinderCapturePayloadMapper.map(
+                payload,
+                displays: displays,
+                tabSnapshots: tabSnapshots
+            )
             AswasLog.capture.info("Captured \(result.state.windows.count) Finder windows")
             return result
         } catch let error as FinderIntegrationError {
@@ -62,6 +77,12 @@ public actor FinderAppleScriptIntegration: FinderWorkspaceIntegration {
         _ state: FinderWorkspaceState,
         mode: RestoreMode
     ) async throws -> FinderRestoreResult {
+        // Opening additional tabs requires Accessibility-driven keyboard events.
+        // Never silently flatten a multi-tab workspace into one folder per window.
+        guard !state.windows.contains(where: { $0.tabs.count > 1 }) || AXIsProcessTrusted() else {
+            throw FinderIntegrationError.accessibilityPermissionRequired
+        }
+
         var result = FinderRestoreResult()
 
         if mode == .replace {
@@ -75,7 +96,7 @@ public actor FinderAppleScriptIntegration: FinderWorkspaceIntegration {
         }
 
         for window in state.windows {
-            guard let selectedTab = window.selectedTab ?? window.tabs.first else {
+            guard let firstTab = window.tabs.first else {
                 result.errors.append(
                     WorkspaceOperationError(
                         code: .invalidWorkspaceData,
@@ -101,7 +122,7 @@ public actor FinderAppleScriptIntegration: FinderWorkspaceIntegration {
                 let output = try await scriptRunner.runBundledScript(
                     named: "finder-restore",
                     handler: "restoreWindow",
-                    arguments: [selectedTab.path] + frameArguments + [window.viewMode?.rawValue ?? "unknown"]
+                    arguments: [firstTab.path] + frameArguments + [window.viewMode?.rawValue ?? "unknown"]
                 )
                 guard let data = output.data(using: .utf8) else {
                     throw FinderIntegrationError.malformedResponse
@@ -136,7 +157,42 @@ public actor FinderAppleScriptIntegration: FinderWorkspaceIntegration {
                         )
                     )
                 }
-                if window.tabs.count > 1 {
+                if window.tabs.count > 1, AXIsProcessTrusted() {
+                    let additionalPaths = window.tabs.dropFirst().map(\.path)
+                    let tabOutcome = await tabController.restoreAdditionalTabs(
+                        paths: additionalPaths,
+                        selectedTabIndex: window.selectedTabIndex,
+                        expectedWindowFrame: window.frame,
+                        setFrontWindowTarget: { [scriptRunner] path in
+                            let output = try await scriptRunner.runBundledScript(
+                                named: "finder-front-window",
+                                handler: "setFrontWindowTarget",
+                                arguments: [path]
+                            )
+                            guard let data = output.data(using: .utf8) else {
+                                throw FinderIntegrationError.malformedResponse
+                            }
+                            return try JSONDecoder().decode(FinderSetTargetPayload.self, from: data).success
+                        }
+                    )
+                    result.restoredTabCount += tabOutcome.restoredAdditionalTabs
+                    for path in tabOutcome.failedPaths {
+                        result.errors.append(
+                            WorkspaceOperationError(
+                                code: .tabCreationFailed,
+                                message: AswasLocalization.string("warning.tab_create", path)
+                            )
+                        )
+                    }
+                    if !tabOutcome.selectedTabRestored {
+                        result.warnings.append(
+                            WorkspaceWarning(
+                                code: .partialRestore,
+                                message: AswasLocalization.string("warning.tab_selection")
+                            )
+                        )
+                    }
+                } else if window.tabs.count > 1 {
                     result.warnings.append(
                         WorkspaceWarning(
                             code: .tabsUnavailable,

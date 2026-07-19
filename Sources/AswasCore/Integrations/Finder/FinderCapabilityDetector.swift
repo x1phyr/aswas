@@ -10,12 +10,19 @@ public struct FinderCapabilityDetector: Sendable {
 
         return FinderCapabilities(
             automationPermission: permission,
-            accessibilityPermission: AXIsProcessTrusted() ? .granted : .notRequired,
+            accessibilityPermission: AXIsProcessTrusted() ? .granted : .required,
             canCaptureWindows: automationGranted,
             canRestoreWindows: automationGranted,
-            canCaptureTabs: false,
-            canRestoreTabs: false
+            canCaptureTabs: automationGranted,
+            canRestoreTabs: automationGranted && AXIsProcessTrusted()
         )
+    }
+
+    public func requestAccessibilityPermission() -> AccessibilityPermissionStatus {
+        let options = [
+            "AXTrustedCheckOptionPrompt": true
+        ] as CFDictionary
+        return AXIsProcessTrustedWithOptions(options) ? .granted : .required
     }
 
     public func automationPermission(askUserIfNeeded: Bool) -> AutomationPermissionStatus {

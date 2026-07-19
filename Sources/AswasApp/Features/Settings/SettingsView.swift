@@ -44,11 +44,14 @@ struct SettingsView: View {
                 }
                 LabeledContent(L10n.text("settings.accessibility")) {
                     Text(accessibilityStatus)
-                        .foregroundStyle(.secondary)
+                        .foregroundStyle(appState.capabilities.accessibilityPermission == .granted ? .green : .orange)
                 }
                 HStack {
                     Button(L10n.text("settings.request_permission")) {
                         Task { await appState.requestAutomationPermission() }
+                    }
+                    Button(L10n.text("settings.request_accessibility")) {
+                        Task { await appState.requestAccessibilityPermission() }
                     }
                     Button(L10n.text("settings.check_again")) {
                         Task { await appState.refresh() }

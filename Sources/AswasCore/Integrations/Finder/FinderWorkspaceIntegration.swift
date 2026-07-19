@@ -15,6 +15,7 @@ public protocol FinderWorkspaceIntegration: Sendable {
 
 public enum FinderIntegrationError: LocalizedError, Equatable, Sendable {
     case permissionDenied
+    case accessibilityPermissionRequired
     case finderUnavailable
     case scriptExecutionFailed(code: Int?, message: String)
     case malformedResponse
@@ -25,6 +26,8 @@ public enum FinderIntegrationError: LocalizedError, Equatable, Sendable {
         switch self {
         case .permissionDenied:
             return AswasLocalization.string("error.permission_denied")
+        case .accessibilityPermissionRequired:
+            return AswasLocalization.string("error.accessibility_required")
         case .finderUnavailable:
             return AswasLocalization.string("error.finder_unavailable")
         case .scriptExecutionFailed:

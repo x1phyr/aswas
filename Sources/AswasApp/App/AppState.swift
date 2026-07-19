@@ -25,7 +25,7 @@ final class AppState {
     var pendingDelete: WorkspaceSnapshot?
     var capabilities = FinderCapabilities(
         automationPermission: .notDetermined,
-        accessibilityPermission: .notRequired,
+        accessibilityPermission: .required,
         canCaptureWindows: false,
         canRestoreWindows: false,
         canCaptureTabs: false,
@@ -82,6 +82,19 @@ final class AppState {
             notice = UserFacingNotice(
                 title: L10n.text("notice.permission_title"),
                 message: L10n.text("notice.permission_message")
+            )
+        }
+    }
+
+    func requestAccessibilityPermission() async {
+        isOperating = true
+        let status = await integration.requestAccessibilityPermission()
+        isOperating = false
+        capabilities = await integration.checkCapabilities()
+        if status != .granted {
+            notice = UserFacingNotice(
+                title: L10n.text("notice.accessibility_title"),
+                message: L10n.text("notice.accessibility_message")
             )
         }
     }
@@ -182,6 +195,8 @@ final class AppState {
     }
 
     func requestRestore(_ workspace: WorkspaceSnapshot, mode: RestoreMode) async {
+        guard await prepareTabRestoreIfNeeded(for: workspace) else { return }
+
         if mode == .replace {
             guard beginOperation() else { return }
             defer { endOperation() }
@@ -243,6 +258,26 @@ final class AppState {
         }
     }
 
+    private func prepareTabRestoreIfNeeded(for workspace: WorkspaceSnapshot) async -> Bool {
+        guard workspace.finder.windows.contains(where: { $0.tabs.count > 1 }) else {
+            return true
+        }
+
+        capabilities = await integration.checkCapabilities()
+        guard !capabilities.canRestoreTabs else { return true }
+
+        _ = await integration.requestAccessibilityPermission()
+        capabilities = await integration.checkCapabilities()
+        guard capabilities.canRestoreTabs else {
+            notice = UserFacingNotice(
+                title: L10n.text("notice.accessibility_restore_title"),
+                message: L10n.text("notice.accessibility_restore_message")
+            )
+            return false
+        }
+        return true
+    }
+
     private func beginOperation() -> Bool {
         guard !isOperating else {
             notice = UserFacingNotice(
@@ -272,7 +307,15 @@ final class AppState {
         errors: [WorkspaceOperationError]
     ) -> String {
         let issueCount = warnings.count + errors.count
-        return issueCount == 0 ? "" : L10n.text("common.attention_count", issueCount)
+        guard issueCount > 0 else { return "" }
+        let messages = warnings.map(\.message) + errors.map(\.message)
+        var uniqueMessages: [String] = []
+        for message in messages where !uniqueMessages.contains(message) {
+            uniqueMessages.append(message)
+        }
+        let details = uniqueMessages.prefix(3).map { "• \($0)" }.joined(separator: "\n")
+        return L10n.text("common.attention_count", issueCount)
+            + (details.isEmpty ? "" : "\n\(details)")
     }
 
     private func showError(_ error: Error) {

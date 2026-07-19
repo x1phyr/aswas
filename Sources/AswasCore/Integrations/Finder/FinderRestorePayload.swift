@@ -15,3 +15,9 @@ struct FinderCloseWindowPayload: Decodable, Sendable {
     var errorNumber: Int?
     var message: String?
 }
+
+struct FinderSetTargetPayload: Decodable, Sendable {
+    var success: Bool
+    var errorNumber: Int?
+    var message: String?
+}

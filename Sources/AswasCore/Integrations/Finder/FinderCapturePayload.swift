@@ -21,10 +21,42 @@ struct FinderCaptureWarningPayload: Decodable, Sendable {
     var message: String
 }
 
+enum FinderCapturedWindowGrouper {
+    private static let boundsTolerance = 2.0
+
+    static func group(
+        _ windows: [FinderCapturedWindowPayload]
+    ) -> [[FinderCapturedWindowPayload]] {
+        var groups: [[FinderCapturedWindowPayload]] = []
+        for window in windows.sorted(by: { $0.index < $1.index }) {
+            if let index = groups.firstIndex(where: { group in
+                guard let first = group.first else { return false }
+                return haveMatchingBounds(first, window)
+            }) {
+                groups[index].append(window)
+            } else {
+                groups.append([window])
+            }
+        }
+        return groups
+    }
+
+    private static func haveMatchingBounds(
+        _ lhs: FinderCapturedWindowPayload,
+        _ rhs: FinderCapturedWindowPayload
+    ) -> Bool {
+        guard lhs.bounds.count == 4, rhs.bounds.count == 4 else { return false }
+        return zip(lhs.bounds, rhs.bounds).allSatisfy {
+            abs($0 - $1) <= boundsTolerance
+        }
+    }
+}
+
 enum FinderCapturePayloadMapper {
     static func map(
         _ payload: FinderCapturePayload,
-        displays: DisplaySnapshot? = nil
+        displays: DisplaySnapshot? = nil,
+        tabSnapshots: [FinderCapturedTabSnapshot] = []
     ) throws -> FinderCaptureResult {
         guard payload.schemaVersion == 1 else {
             throw FinderIntegrationError.malformedResponse
@@ -36,7 +68,17 @@ enum FinderCapturePayloadMapper {
             WorkspaceWarning(code: .windowUnreadable, message: $0.message)
         }
 
-        for rawWindow in payload.windows.sorted(by: { $0.index < $1.index }) {
+        var snapshotsByWindowID: [Int: FinderCapturedTabSnapshot] = [:]
+        for snapshot in tabSnapshots {
+            for windowID in snapshot.windowIDs {
+                snapshotsByWindowID[windowID] = snapshot
+            }
+        }
+        let rawGroups = FinderCapturedWindowGrouper.group(payload.windows)
+        var groupsMissingTabMetadata = 0
+
+        for rawGroup in rawGroups {
+            guard let rawWindow = rawGroup.first else { continue }
             guard rawWindow.bounds.count == 4 else {
                 warnings.append(
                     WorkspaceWarning(
@@ -67,37 +109,48 @@ enum FinderCapturePayloadMapper {
                 continue
             }
 
-            let normalizedPath = PathNormalizer.normalize(rawWindow.path)
             let placement = displays.map {
                 WindowPlacement.capture(frame: frame, displays: $0)
             }
-            let tab = FinderTabState(
-                path: normalizedPath,
-                displayName: rawWindow.name.isEmpty ? nil : rawWindow.name
-            )
+            let capturedTabs = snapshotsByWindowID[rawWindow.id].flatMap { snapshot in
+                Set(snapshot.windowIDs) == Set(rawGroup.map(\.id)) ? snapshot : nil
+            }
+            let tabs = capturedTabs?.tabs ?? rawGroup
+                .sorted(by: { $0.index < $1.index })
+                .map {
+                    FinderTabState(
+                        path: PathNormalizer.normalize($0.path),
+                        displayName: $0.name.isEmpty ? nil : $0.name
+                    )
+                }
+            if rawGroup.count > 1, capturedTabs == nil {
+                groupsMissingTabMetadata += 1
+            }
             windows.append(
                 FinderWindowState(
-                    tabs: [tab],
-                    selectedTabIndex: 0,
+                    tabs: tabs,
+                    selectedTabIndex: capturedTabs?.selectedTabIndex ?? 0,
                     frame: frame,
                     normalizedFrame: placement?.normalizedFrame,
                     display: placement?.display,
                     viewMode: FinderViewMode(rawValue: rawWindow.viewMode) ?? .unknown
                 )
             )
-            references.append(FinderWindowReference(windowID: rawWindow.id))
+            references.append(contentsOf: rawGroup.map { FinderWindowReference(windowID: $0.id) })
         }
 
         guard !windows.isEmpty else {
             throw FinderIntegrationError.noReadableWindows
         }
 
-        warnings.append(
-            WorkspaceWarning(
-                code: .tabsUnavailable,
-                message: AswasLocalization.string("warning.tabs_unavailable_capture")
+        if groupsMissingTabMetadata > 0 {
+            warnings.append(
+                WorkspaceWarning(
+                    code: .tabsUnavailable,
+                    message: AswasLocalization.string("warning.tabs_unavailable_capture")
+                )
             )
-        )
+        }
         if displays?.displays.isEmpty == true {
             warnings.append(
                 WorkspaceWarning(
