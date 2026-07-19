@@ -17,13 +17,11 @@
   </p>
 </div>
 
-![aswas —— 让 Finder 工作区回到你离开时的位置](Assets/Brand/readme-hero.svg)
-
 Finder 窗口本就是工作记忆的一部分：项目目录、参考资料、导出位置，以及下一步要打开的地方。**aswas 会把这套排列保存成一个命名工作区**。切换任务前保存并关闭，之后从菜单栏一键恢复。
 
-![aswas 工作区资料库产品预览](Assets/Brand/product-preview.svg)
+![aswas 工作区资料库，展示脱敏演示工作区与 Finder 标签组](Assets/Brand/app-screenshot-zh-CN.png)
 
-> 上图是产品展示插画。实际应用使用原生 SwiftUI 控件，并自动跟随当前 macOS 外观。
+> 真实原生 macOS 界面；工作区名称与路径均为脱敏演示数据。
 
 ## 为什么选择 aswas
 

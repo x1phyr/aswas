@@ -17,13 +17,11 @@
   </p>
 </div>
 
-![aswas — your Finder workspace, exactly where you left it](Assets/Brand/readme-hero.svg)
-
 Finder windows are part of your working memory: the project folder, references, exports, and the places you need next. **aswas turns that arrangement into a named workspace**. Save it before changing context, close it without losing the setup, and restore it later from the menu bar.
 
-![aswas workspace library product preview](Assets/Brand/product-preview.svg)
+![aswas workspace library showing sanitized demo workspaces and Finder tab groups](Assets/Brand/app-screenshot-en.png)
 
-> The preview above is an illustrated product view. The app uses native SwiftUI controls and follows the current macOS appearance.
+> Real native macOS interface shown with sanitized demo workspace names and paths.
 
 ## Why aswas
 
