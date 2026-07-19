@@ -46,10 +46,13 @@ struct WorkspaceDetailView: View {
                                 Button {
                                     NSWorkspace.shared.open(URL(fileURLWithPath: tab.path))
                                 } label: {
-                                    Image(systemName: "arrow.forward.circle")
+                                    Label(
+                                        L10n.text("workspace.open_finder_short"),
+                                        systemImage: "arrow.up.forward.square"
+                                    )
                                 }
-                                .buttonStyle(.plain)
                                 .help(L10n.text("workspace.open_finder"))
+                                .accessibilityLabel(L10n.text("workspace.open_finder"))
                             }
                         }
                     }
@@ -57,26 +60,51 @@ struct WorkspaceDetailView: View {
             }
 
             Divider()
-            HStack {
-                Button(L10n.text("workspace.update")) {
-                    Task { await appState.updateWorkspace(workspace) }
+            VStack(spacing: 10) {
+                HStack(spacing: 12) {
+                    VStack(alignment: .leading, spacing: 2) {
+                        Text(L10n.text("workspace.detail_update_group"))
+                            .font(.subheadline.weight(.semibold))
+                        Text(L10n.text("workspace.detail_update_description"))
+                            .font(.caption)
+                            .foregroundStyle(.secondary)
+                    }
+                    Spacer(minLength: 16)
+                    Button(L10n.text("workspace.detail_update")) {
+                        Task { await appState.updateWorkspace(workspace) }
+                    }
+                    .help(L10n.text("workspace.detail_update_help"))
+                    Button(L10n.text("workspace.detail_update_close")) {
+                        dismiss()
+                        Task { await appState.updateWorkspaceAndClose(workspace) }
+                    }
+                    .help(L10n.text("workspace.detail_update_close_help"))
                 }
-                Button(L10n.text("workspace.update_close")) {
-                    dismiss()
-                    Task { await appState.updateWorkspaceAndClose(workspace) }
+
+                HStack(spacing: 12) {
+                    VStack(alignment: .leading, spacing: 2) {
+                        Text(L10n.text("workspace.detail_restore_group"))
+                            .font(.subheadline.weight(.semibold))
+                        Text(L10n.text("workspace.detail_restore_description"))
+                            .font(.caption)
+                            .foregroundStyle(.secondary)
+                    }
+                    Spacer(minLength: 16)
+                    Button(L10n.text("workspace.detail_restore_open")) {
+                        Task { await appState.requestRestore(workspace, mode: .open) }
+                    }
+                    .buttonStyle(.borderedProminent)
+                    .help(L10n.text("workspace.detail_restore_open_help"))
+                    Button(L10n.text("workspace.detail_restore_replace")) {
+                        dismiss()
+                        Task { await appState.requestRestore(workspace, mode: .replace) }
+                    }
+                    .help(L10n.text("workspace.detail_restore_replace_help"))
                 }
-                Spacer()
-                Button(L10n.text("workspace.restore_open")) {
-                    Task { await appState.requestRestore(workspace, mode: .open) }
-                }
-                Button(L10n.text("workspace.restore_replace")) {
-                    dismiss()
-                    Task { await appState.requestRestore(workspace, mode: .replace) }
-                }
-                .buttonStyle(.borderedProminent)
             }
+            .disabled(appState.isOperating)
             .padding()
         }
-        .frame(minWidth: 580, minHeight: 460)
+        .frame(minWidth: 680, minHeight: 500)
     }
 }
