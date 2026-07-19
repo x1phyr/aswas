@@ -4,6 +4,7 @@ import SwiftUI
 struct MenuBarContent: View {
     @Bindable var appState: AppState
     @Environment(\.openWindow) private var openWindow
+    @Environment(\.openSettings) private var openSettings
     @AppStorage("defaultRestoreMode") private var defaultRestoreMode = RestoreMode.open.rawValue
     @State private var showingSavePrompt = false
     @State private var showingSaveAndClosePrompt = false
@@ -49,7 +50,10 @@ struct MenuBarContent: View {
             NSApp.activate(ignoringOtherApps: true)
             openWindow(id: "main")
         }
-        SettingsLink { Text(L10n.text("menu.settings")) }
+        Button(L10n.text("menu.settings")) {
+            NSApp.activate(ignoringOtherApps: true)
+            openSettings()
+        }
         Button(L10n.text("menu.quit")) { NSApp.terminate(nil) }
 
         promptAlerts
