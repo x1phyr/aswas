@@ -86,35 +86,37 @@ struct WorkspaceListView: View {
     }
 
     private var workspaceLibrary: some View {
-        Group {
-            if appState.workspaces.isEmpty {
-                ContentUnavailableView {
-                    Label(L10n.text("empty.title"), systemImage: "folder.badge.plus")
-                } description: {
-                    Text(L10n.text("empty.description"))
-                } actions: {
-                    Button(L10n.text("save.current_workspace")) {
-                        beginSave(closeAfterSave: false)
+        VStack(spacing: 0) {
+            Group {
+                if appState.workspaces.isEmpty {
+                    ContentUnavailableView {
+                        Label(L10n.text("empty.title"), systemImage: "folder.badge.plus")
+                    } description: {
+                        Text(L10n.text("empty.description"))
+                    } actions: {
+                        Button(L10n.text("save.current_workspace")) {
+                            beginSave(closeAfterSave: false)
+                        }
                     }
+                } else {
+                    List(filteredWorkspaces, selection: $selectedWorkspaceID) { workspace in
+                        WorkspaceRow(workspace: workspace)
+                            .tag(workspace.id)
+                            .contextMenu { workspaceMenu(for: workspace) }
+                    }
+                    .listStyle(.sidebar)
+                    .searchable(
+                        text: $searchText,
+                        placement: .sidebar,
+                        prompt: L10n.text("workspace.search_prompt")
+                    )
                 }
-            } else {
-                List(filteredWorkspaces, selection: $selectedWorkspaceID) { workspace in
-                    WorkspaceRow(workspace: workspace)
-                        .tag(workspace.id)
-                        .contextMenu { workspaceMenu(for: workspace) }
-                }
-                .listStyle(.sidebar)
-                .searchable(
-                    text: $searchText,
-                    placement: .sidebar,
-                    prompt: L10n.text("workspace.search_prompt")
-                )
             }
-        }
-        .navigationTitle(L10n.text("workspace.library_title"))
-        .safeAreaInset(edge: .bottom) {
+            .frame(maxWidth: .infinity, maxHeight: .infinity)
+
             permissionFooter
         }
+        .navigationTitle(L10n.text("workspace.library_title"))
     }
 
     private var saveMenu: some View {
