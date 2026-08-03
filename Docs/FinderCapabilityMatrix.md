@@ -14,9 +14,9 @@ proof of behavior on every supported OS release.
 | Restore view mode | Supported for list view | AppleScript `current view` | The PoC-created window accepted `list view` and reported it back. Icon, column, and gallery still need individual coverage. |
 | Create a Finder window | Supported | In-process AppleScript `make new Finder window` | Native restore created a window targeting the repository folder. |
 | Close a specified window | Supported | In-process AppleScript `close window id` | Native cleanup closed only the returned window ID; the first loop-specifier attempt exposed error -1731 and was replaced. |
-| Read tabs | Best effort, permission-gated | AppleScript entries + AX window grouping | Finder exposes each tab as a window-like entry. The current bounds-based candidate grouping can confuse separate windows that have identical frames. |
+| Read tabs | Best effort, permission-gated | AX physical windows + AppleScript entries | Finder exposes each tab as a window-like entry and may leave inactive entries at stale bounds after a move. AX windows and `AXTabs` define groups; the selected tab's live frame anchors path matching. |
 | Read selected tab | Best effort, permission-gated | AX value | The selected AX tab is recorded when the physical window and tab strip are matched successfully. |
-| Read tab order | Best effort, permission-gated | AX child order + title matching | AX is read-only during capture. Duplicate Finder titles are currently ambiguous and require explicit regression coverage. |
+| Read tab order | Best effort, permission-gated | `AXTabs` order + title matching | AX is read-only during capture. Duplicate Finder titles remain ambiguous and are rejected when bounds cannot disambiguate them. |
 | Create tabs | Best effort, permission-gated | Accessibility keyboard event + AppleScript `target` | Additional tabs are requested serially with a stabilization delay. Posting Command-T does not itself prove that Finder created a tab. |
 | Restore tab order | Best effort, permission-gated | Sequential UI automation | The current AX target is chosen primarily by frame; overlapping windows require additional identity verification. |
 | Restore selected tab | Enhanced, permission-gated | AX press | Falls back with a partial-restore warning if selection fails. |
@@ -29,6 +29,6 @@ AppleScript remains the reliable window-level baseline. Multi-tab fidelity is at
 as an explicitly permission-gated enhancement using AXUIElement for the tab strip and
 AppleScript for exact folder paths. If Accessibility is unavailable or Finder's UI changes,
 aswas refuses to persist or overwrite a multi-tab snapshot when AX metadata is absent,
-preserving the previous workspace and leaving all Finder windows open. Bounds collisions,
-duplicate tab titles, Finder focus races, and overlapping-window restore targeting remain
+preserving the previous workspace and leaving all Finder windows open. Duplicate tab titles,
+Finder focus races, and overlapping-window restore targeting remain
 known hardening areas and must be included in release testing.
