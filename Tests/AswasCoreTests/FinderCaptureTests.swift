@@ -87,6 +87,208 @@ struct FinderCaptureTests {
     }
 
     @Test
+    func matchesPhysicalWindowWhenInactiveTabsKeepStaleBounds() throws {
+        let windows = [
+            FinderCapturedWindowPayload(
+                id: 10,
+                index: 1,
+                name: "task",
+                path: "/workspace/task",
+                bounds: [474, 79, 1765, 853],
+                viewMode: "icon"
+            ),
+            FinderCapturedWindowPayload(
+                id: 11,
+                index: 4,
+                name: "card",
+                path: "/workspace/card",
+                bounds: [33, 30, 1324, 804],
+                viewMode: "icon"
+            ),
+            FinderCapturedWindowPayload(
+                id: 12,
+                index: 5,
+                name: "card_pack",
+                path: "/workspace/card/card_pack",
+                bounds: [33, 30, 1324, 804],
+                viewMode: "icon"
+            )
+        ]
+        let descriptors = [
+            FinderAccessibilityWindowDescriptor(
+                frame: CodableRect(x: 474, y: 79, width: 1291, height: 774),
+                tabTitles: ["card", "card_pack", "task"],
+                selectedTabIndex: 2
+            )
+        ]
+
+        let snapshots = FinderCapturedTabMatcher.match(
+            windows: windows,
+            descriptors: descriptors
+        )
+
+        #expect(snapshots.count == 1)
+        #expect(snapshots[0].windowIDs == [11, 12, 10])
+        #expect(snapshots[0].tabs.map(\.path) == [
+            "/workspace/card",
+            "/workspace/card/card_pack",
+            "/workspace/task"
+        ])
+        #expect(snapshots[0].selectedTabIndex == 2)
+    }
+
+    @Test
+    func mapsStaleTabBoundsAsOnePhysicalWindowAtSelectedTabFrame() throws {
+        let payload = FinderCapturePayload(
+            schemaVersion: 1,
+            windows: [
+                FinderCapturedWindowPayload(
+                    id: 10,
+                    index: 1,
+                    name: "task",
+                    path: "/workspace/task",
+                    bounds: [474, 79, 1765, 853],
+                    viewMode: "icon"
+                ),
+                FinderCapturedWindowPayload(
+                    id: 11,
+                    index: 4,
+                    name: "card",
+                    path: "/workspace/card",
+                    bounds: [33, 30, 1324, 804],
+                    viewMode: "icon"
+                ),
+                FinderCapturedWindowPayload(
+                    id: 12,
+                    index: 5,
+                    name: "card_pack",
+                    path: "/workspace/card/card_pack",
+                    bounds: [33, 30, 1324, 804],
+                    viewMode: "icon"
+                )
+            ],
+            warnings: []
+        )
+        let snapshot = FinderCapturedTabSnapshot(
+            windowIDs: [11, 12, 10],
+            tabs: [
+                FinderTabState(path: "/workspace/card", displayName: "card"),
+                FinderTabState(path: "/workspace/card/card_pack", displayName: "card_pack"),
+                FinderTabState(path: "/workspace/task", displayName: "task")
+            ],
+            selectedTabIndex: 2
+        )
+
+        let result = try FinderCapturePayloadMapper.map(
+            payload,
+            tabSnapshots: [snapshot]
+        )
+
+        #expect(result.state.windows.count == 1)
+        #expect(result.state.windows[0].tabs.map(\.path) == [
+            "/workspace/card",
+            "/workspace/card/card_pack",
+            "/workspace/task"
+        ])
+        #expect(result.state.windows[0].selectedTabIndex == 2)
+        #expect(result.state.windows[0].frame == CodableRect(
+            x: 474,
+            y: 79,
+            width: 1291,
+            height: 774
+        ))
+        #expect(!result.warnings.contains { $0.code == .tabsUnavailable })
+    }
+
+    @Test
+    func accessibilitySnapshotsKeepSeparateWindowsWithIdenticalBounds() throws {
+        let payload = FinderCapturePayload(
+            schemaVersion: 1,
+            windows: [
+                FinderCapturedWindowPayload(
+                    id: 1,
+                    index: 1,
+                    name: "First",
+                    path: "/first",
+                    bounds: [10, 20, 810, 620],
+                    viewMode: "list"
+                ),
+                FinderCapturedWindowPayload(
+                    id: 2,
+                    index: 2,
+                    name: "Second",
+                    path: "/second",
+                    bounds: [10, 20, 810, 620],
+                    viewMode: "icon"
+                )
+            ],
+            warnings: []
+        )
+        let snapshots = [
+            FinderCapturedTabSnapshot(
+                windowIDs: [1],
+                tabs: [FinderTabState(path: "/first", displayName: "First")],
+                selectedTabIndex: 0
+            ),
+            FinderCapturedTabSnapshot(
+                windowIDs: [2],
+                tabs: [FinderTabState(path: "/second", displayName: "Second")],
+                selectedTabIndex: 0
+            )
+        ]
+
+        let result = try FinderCapturePayloadMapper.map(payload, tabSnapshots: snapshots)
+
+        #expect(result.state.windows.count == 2)
+        #expect(result.state.windows.map { $0.tabs[0].path } == ["/first", "/second"])
+        #expect(!result.warnings.contains { $0.code == .tabsUnavailable })
+    }
+
+    @Test
+    func refusesAmbiguousDuplicateInactiveTabTitles() {
+        let windows = [
+            FinderCapturedWindowPayload(
+                id: 1,
+                index: 1,
+                name: "Selected",
+                path: "/selected",
+                bounds: [400, 100, 1200, 700],
+                viewMode: "list"
+            ),
+            FinderCapturedWindowPayload(
+                id: 2,
+                index: 2,
+                name: "Duplicate",
+                path: "/first-duplicate",
+                bounds: [10, 10, 810, 610],
+                viewMode: "list"
+            ),
+            FinderCapturedWindowPayload(
+                id: 3,
+                index: 3,
+                name: "Duplicate",
+                path: "/second-duplicate",
+                bounds: [20, 20, 820, 620],
+                viewMode: "list"
+            )
+        ]
+        let descriptors = [
+            FinderAccessibilityWindowDescriptor(
+                frame: CodableRect(x: 400, y: 100, width: 800, height: 600),
+                tabTitles: ["Duplicate", "Selected"],
+                selectedTabIndex: 1
+            )
+        ]
+
+        let snapshots = FinderCapturedTabMatcher.match(
+            windows: windows,
+            descriptors: descriptors
+        )
+
+        #expect(snapshots.isEmpty)
+    }
+
+    @Test
     func groupsFinderTabWindowsBySharedBoundsWithoutAccessibility() throws {
         let payload = FinderCapturePayload(
             schemaVersion: 1,

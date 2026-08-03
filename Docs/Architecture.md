@@ -40,14 +40,14 @@ writes are actor-isolated.
 2. Capture window ID, active target folder, bounds, and current view.
 3. Map Finder top-left coordinates to the current display descriptor.
 4. Save both absolute and normalized frames.
-5. Group AppleScript window-like entries into candidate physical windows using shared bounds.
-6. When Accessibility is granted, match each candidate to an AX window and reconstruct tab order and selection from the tab strip.
+5. When Accessibility is granted, enumerate physical AX windows and their ordered `AXTabs`.
+6. Match each AX tab to its AppleScript window-like entry by title, using the selected tab's live frame only as the physical-window anchor.
 7. Reject multi-tab capture with `tabsUnavailable` when order cannot be confirmed.
 8. Validate, encode, fsync, back up the previous file, and atomically replace it.
 
-The current grouping and ordering layer is heuristic: identical physical-window bounds and
-duplicate Finder tab titles can be ambiguous. A future hardening pass should make AX physical
-window identity primary and use bounds/title only as secondary matching signals.
+AX physical-window identity is primary because Finder can leave inactive AppleScript tab
+entries at stale bounds after a window moves. Duplicate Finder tab titles can still be
+ambiguous; bounds are used only as a duplicate-title tie breaker.
 
 Finder window IDs are returned only as runtime references. They are never persisted as
 stable workspace identity because Finder can recycle them after restart.

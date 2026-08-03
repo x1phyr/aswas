@@ -8,6 +8,134 @@ struct FinderCapturedTabSnapshot: Equatable, Sendable {
     var selectedTabIndex: Int
 }
 
+struct FinderAccessibilityWindowDescriptor: Equatable, Sendable {
+    var frame: CodableRect?
+    var tabTitles: [String]
+    var selectedTabIndex: Int
+}
+
+/// Matches Finder's physical Accessibility windows to the window-like entries
+/// returned for individual tabs by AppleScript.
+enum FinderCapturedTabMatcher {
+    private static let maximumAnchorDistance = 240.0
+
+    static func match(
+        windows: [FinderCapturedWindowPayload],
+        descriptors: [FinderAccessibilityWindowDescriptor]
+    ) -> [FinderCapturedTabSnapshot] {
+        var remaining = Dictionary(uniqueKeysWithValues: windows.map { ($0.id, $0) })
+        var snapshots: [FinderCapturedTabSnapshot] = []
+
+        for descriptor in descriptors {
+            guard !descriptor.tabTitles.isEmpty,
+                  descriptor.tabTitles.indices.contains(descriptor.selectedTabIndex) else {
+                continue
+            }
+
+            let selectedTitle = descriptor.tabTitles[descriptor.selectedTabIndex]
+            guard let anchor = bestAnchor(
+                titled: selectedTitle,
+                expectedFrame: descriptor.frame,
+                candidates: Array(remaining.values)
+            ) else {
+                continue
+            }
+
+            // Work on a copy so an ambiguous tab does not consume entries needed by
+            // another physical Finder window.
+            var candidateRemaining = remaining
+            candidateRemaining.removeValue(forKey: anchor.id)
+            var orderedWindows: [FinderCapturedWindowPayload?] = Array(
+                repeating: nil,
+                count: descriptor.tabTitles.count
+            )
+            orderedWindows[descriptor.selectedTabIndex] = anchor
+
+            var complete = true
+            for index in descriptor.tabTitles.indices where index != descriptor.selectedTabIndex {
+                guard let match = matchInactiveTab(
+                    titled: descriptor.tabTitles[index],
+                    anchor: anchor,
+                    candidates: Array(candidateRemaining.values)
+                ) else {
+                    complete = false
+                    break
+                }
+                orderedWindows[index] = match
+                candidateRemaining.removeValue(forKey: match.id)
+            }
+
+            guard complete else { continue }
+            let resolved = orderedWindows.compactMap { $0 }
+            guard resolved.count == descriptor.tabTitles.count else { continue }
+
+            remaining = candidateRemaining
+            snapshots.append(
+                FinderCapturedTabSnapshot(
+                    windowIDs: resolved.map(\.id),
+                    tabs: resolved.map(tabState),
+                    selectedTabIndex: descriptor.selectedTabIndex
+                )
+            )
+        }
+
+        return snapshots
+    }
+
+    private static func bestAnchor(
+        titled title: String,
+        expectedFrame: CodableRect?,
+        candidates: [FinderCapturedWindowPayload]
+    ) -> FinderCapturedWindowPayload? {
+        let titledCandidates = candidates.filter { $0.name == title }
+        guard !titledCandidates.isEmpty else { return nil }
+        guard let expectedFrame else {
+            return titledCandidates.count == 1 ? titledCandidates[0] : nil
+        }
+
+        let ranked = titledCandidates
+            .map { ($0, frameDistance($0, expectedFrame)) }
+            .sorted { $0.1 < $1.1 }
+        guard let best = ranked.first, best.1 <= maximumAnchorDistance else { return nil }
+        if ranked.count > 1, ranked[1].1 == best.1 { return nil }
+        return best.0
+    }
+
+    private static func matchInactiveTab(
+        titled title: String,
+        anchor: FinderCapturedWindowPayload,
+        candidates: [FinderCapturedWindowPayload]
+    ) -> FinderCapturedWindowPayload? {
+        let titledCandidates = candidates.filter { $0.name == title }
+        if titledCandidates.count == 1 { return titledCandidates[0] }
+
+        // Bounds are only a duplicate-title tie breaker. Finder may leave inactive
+        // tabs at a stale frame after their physical window moves.
+        let matchingAnchorBounds = titledCandidates.filter {
+            FinderCapturedWindowGrouper.haveMatchingBounds($0, anchor)
+        }
+        return matchingAnchorBounds.count == 1 ? matchingAnchorBounds[0] : nil
+    }
+
+    private static func frameDistance(
+        _ window: FinderCapturedWindowPayload,
+        _ frame: CodableRect
+    ) -> Double {
+        guard window.bounds.count == 4 else { return .greatestFiniteMagnitude }
+        return abs(window.bounds[0] - frame.x)
+            + abs(window.bounds[1] - frame.y)
+            + abs((window.bounds[2] - window.bounds[0]) - frame.width)
+            + abs((window.bounds[3] - window.bounds[1]) - frame.height)
+    }
+
+    private static func tabState(from window: FinderCapturedWindowPayload) -> FinderTabState {
+        FinderTabState(
+            path: PathNormalizer.normalize(window.path),
+            displayName: window.name.isEmpty ? nil : window.name
+        )
+    }
+}
+
 struct FinderTabRestoreOutcome: Equatable, Sendable {
     var restoredAdditionalTabs: Int
     var failedPaths: [String]
@@ -30,40 +158,8 @@ final class FinderAccessibilityTabController: @unchecked Sendable {
         for windows: [FinderCapturedWindowPayload]
     ) -> [FinderCapturedTabSnapshot] {
         guard AXIsProcessTrusted(), let context = finderContext() else { return [] }
-
-        var snapshots: [FinderCapturedTabSnapshot] = []
-        var availableAXWindows = context.windows
-
-        for group in FinderCapturedWindowGrouper.group(windows) {
-            guard let representative = group.first,
-                  let matchIndex = bestWindowMatch(for: representative, in: availableAXWindows) else {
-                continue
-            }
-            let axWindow = availableAXWindows.remove(at: matchIndex)
-            guard let tabGroup = firstDescendant(of: axWindow, matchingRole: kAXTabGroupRole as String) else {
-                continue
-            }
-
-            let tabButtons = descendants(of: tabGroup).filter(isTabButton)
-            guard !tabButtons.isEmpty else { continue }
-
-            let selectedIndex = tabButtons.firstIndex(where: isSelected) ?? 0
-            let titles = tabButtons.compactMap { button -> String? in
-                attribute(button, kAXTitleAttribute as String)
-            }
-            let orderedWindows = order(group, usingTabTitles: titles)
-            if orderedWindows.count == tabButtons.count {
-                snapshots.append(
-                    FinderCapturedTabSnapshot(
-                    windowIDs: group.map(\.id),
-                    tabs: orderedWindows.map(tabState),
-                    selectedTabIndex: selectedIndex
-                )
-                )
-            }
-        }
-
-        return snapshots
+        let descriptors = context.windows.compactMap(windowDescriptor)
+        return FinderCapturedTabMatcher.match(windows: windows, descriptors: descriptors)
     }
 
     func restoreAdditionalTabs(
@@ -127,32 +223,6 @@ final class FinderAccessibilityTabController: @unchecked Sendable {
         )
     }
 
-    private func order(
-        _ windows: [FinderCapturedWindowPayload],
-        usingTabTitles titles: [String]
-    ) -> [FinderCapturedWindowPayload] {
-        guard titles.count == windows.count else {
-            return windows.sorted(by: { $0.index < $1.index })
-        }
-        var remaining = windows.sorted(by: { $0.index < $1.index })
-        var ordered: [FinderCapturedWindowPayload] = []
-        for title in titles {
-            if let match = remaining.firstIndex(where: { $0.name == title }) {
-                ordered.append(remaining.remove(at: match))
-            } else if !remaining.isEmpty {
-                ordered.append(remaining.removeFirst())
-            }
-        }
-        return ordered + remaining
-    }
-
-    private func tabState(from window: FinderCapturedWindowPayload) -> FinderTabState {
-        FinderTabState(
-            path: PathNormalizer.normalize(window.path),
-            displayName: window.name.isEmpty ? nil : window.name
-        )
-    }
-
     private func finderContext() -> FinderContext? {
         guard let application = NSRunningApplication.runningApplications(
             withBundleIdentifier: finderBundleIdentifier
@@ -166,56 +236,46 @@ final class FinderAccessibilityTabController: @unchecked Sendable {
         return FinderContext(application: application, element: element, windows: windows)
     }
 
-    private func bestWindowMatch(
-        for window: FinderCapturedWindowPayload,
-        in candidates: [AXUIElement]
-    ) -> Int? {
-        guard window.bounds.count == 4 else { return nil }
-        let expectedPosition = CGPoint(x: window.bounds[0], y: window.bounds[1])
-        let expectedSize = CGSize(
-            width: window.bounds[2] - window.bounds[0],
-            height: window.bounds[3] - window.bounds[1]
-        )
-
-        return candidates.indices.min { lhs, rhs in
-            windowMatchScore(
-                candidates[lhs],
-                expectedTitle: window.name,
-                expectedPosition: expectedPosition,
-                expectedSize: expectedSize
-            ) < windowMatchScore(
-                candidates[rhs],
-                expectedTitle: window.name,
-                expectedPosition: expectedPosition,
-                expectedSize: expectedSize
+    private func windowDescriptor(_ window: AXUIElement) -> FinderAccessibilityWindowDescriptor? {
+        let frame = windowFrame(window)
+        if let tabGroup = firstDescendant(
+            of: window,
+            matchingRole: kAXTabGroupRole as String
+        ) {
+            let tabElements = tabs(in: tabGroup)
+            let titles: [String] = tabElements.compactMap {
+                attribute($0, kAXTitleAttribute as String)
+            }
+            guard !tabElements.isEmpty, titles.count == tabElements.count else { return nil }
+            return FinderAccessibilityWindowDescriptor(
+                frame: frame,
+                tabTitles: titles,
+                selectedTabIndex: tabElements.firstIndex(where: isSelected) ?? 0
             )
-        }.flatMap { index in
-            windowMatchScore(
-                candidates[index],
-                expectedTitle: window.name,
-                expectedPosition: expectedPosition,
-                expectedSize: expectedSize
-            ) <= 240
-                ? index
-                : nil
         }
+
+        guard let title: String = attribute(window, kAXTitleAttribute as String),
+              !title.isEmpty else {
+            return nil
+        }
+        return FinderAccessibilityWindowDescriptor(
+            frame: frame,
+            tabTitles: [title],
+            selectedTabIndex: 0
+        )
     }
 
-    private func windowMatchScore(
-        _ window: AXUIElement,
-        expectedTitle: String,
-        expectedPosition: CGPoint,
-        expectedSize: CGSize
-    ) -> CGFloat {
-        let geometry = windowDistance(
-            window,
-            expectedPosition: expectedPosition,
-            expectedSize: expectedSize
+    private func windowFrame(_ window: AXUIElement) -> CodableRect? {
+        guard let position = pointAttribute(window, kAXPositionAttribute as String),
+              let size = sizeAttribute(window, kAXSizeAttribute as String) else {
+            return nil
+        }
+        return CodableRect(
+            x: position.x,
+            y: position.y,
+            width: size.width,
+            height: size.height
         )
-        guard geometry.isFinite else { return geometry }
-        let title: String? = attribute(window, kAXTitleAttribute as String)
-        if expectedTitle.isEmpty || title == expectedTitle { return geometry }
-        return geometry + 120
     }
 
     private func windowDistance(
@@ -243,7 +303,7 @@ final class FinderAccessibilityTabController: @unchecked Sendable {
         ) else {
             return index == 0
         }
-        let buttons = descendants(of: tabGroup).filter(isTabButton)
+        let buttons = tabs(in: tabGroup)
         guard buttons.indices.contains(index) else { return false }
         return select(tab: buttons[index])
     }
@@ -321,7 +381,18 @@ final class FinderAccessibilityTabController: @unchecked Sendable {
             || subrole == "AXTabButton"
     }
 
+    private func tabs(in tabGroup: AXUIElement) -> [AXUIElement] {
+        let explicitTabs: [AXUIElement]? = attribute(
+            tabGroup,
+            kAXTabsAttribute as String
+        )
+        return explicitTabs ?? descendants(of: tabGroup).filter(isTabButton)
+    }
+
     private func isSelected(_ element: AXUIElement) -> Bool {
+        if let selected: NSNumber = attribute(element, kAXSelectedAttribute as String) {
+            return selected.boolValue
+        }
         guard let value: AnyObject = rawAttribute(element, kAXValueAttribute as String) else {
             return false
         }

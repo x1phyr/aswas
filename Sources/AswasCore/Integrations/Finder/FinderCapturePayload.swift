@@ -41,7 +41,7 @@ enum FinderCapturedWindowGrouper {
         return groups
     }
 
-    private static func haveMatchingBounds(
+    static func haveMatchingBounds(
         _ lhs: FinderCapturedWindowPayload,
         _ rhs: FinderCapturedWindowPayload
     ) -> Bool {
@@ -68,17 +68,19 @@ enum FinderCapturePayloadMapper {
             WorkspaceWarning(code: .windowUnreadable, message: $0.message)
         }
 
-        var snapshotsByWindowID: [Int: FinderCapturedTabSnapshot] = [:]
-        for snapshot in tabSnapshots {
-            for windowID in snapshot.windowIDs {
-                snapshotsByWindowID[windowID] = snapshot
-            }
-        }
-        let rawGroups = FinderCapturedWindowGrouper.group(payload.windows)
+        let groupedCaptures = captureGroups(
+            windows: payload.windows,
+            tabSnapshots: tabSnapshots
+        )
         var groupsMissingTabMetadata = 0
 
-        for rawGroup in rawGroups {
-            guard let rawWindow = rawGroup.first else { continue }
+        for captureGroup in groupedCaptures {
+            let rawGroup = captureGroup.windows
+            let capturedTabs = captureGroup.snapshot
+            guard let rawWindow = selectedRawWindow(
+                from: rawGroup,
+                snapshot: capturedTabs
+            ) else { continue }
             guard rawWindow.bounds.count == 4 else {
                 warnings.append(
                     WorkspaceWarning(
@@ -111,9 +113,6 @@ enum FinderCapturePayloadMapper {
 
             let placement = displays.map {
                 WindowPlacement.capture(frame: frame, displays: $0)
-            }
-            let capturedTabs = snapshotsByWindowID[rawWindow.id].flatMap { snapshot in
-                Set(snapshot.windowIDs) == Set(rawGroup.map(\.id)) ? snapshot : nil
             }
             let tabs = capturedTabs?.tabs ?? rawGroup
                 .sorted(by: { $0.index < $1.index })
@@ -165,5 +164,50 @@ enum FinderCapturePayloadMapper {
             managedWindows: references,
             warnings: warnings
         )
+    }
+
+    private struct CaptureGroup {
+        var windows: [FinderCapturedWindowPayload]
+        var snapshot: FinderCapturedTabSnapshot?
+    }
+
+    private static func captureGroups(
+        windows: [FinderCapturedWindowPayload],
+        tabSnapshots: [FinderCapturedTabSnapshot]
+    ) -> [CaptureGroup] {
+        let windowsByID = Dictionary(uniqueKeysWithValues: windows.map { ($0.id, $0) })
+        var consumedWindowIDs: Set<Int> = []
+        var groups: [CaptureGroup] = []
+
+        for snapshot in tabSnapshots {
+            let uniqueIDs = Set(snapshot.windowIDs)
+            guard uniqueIDs.count == snapshot.windowIDs.count,
+                  snapshot.tabs.count == snapshot.windowIDs.count,
+                  uniqueIDs.isDisjoint(with: consumedWindowIDs) else {
+                continue
+            }
+            let resolved = snapshot.windowIDs.compactMap { windowsByID[$0] }
+            guard resolved.count == snapshot.windowIDs.count else { continue }
+            groups.append(CaptureGroup(windows: resolved, snapshot: snapshot))
+            consumedWindowIDs.formUnion(uniqueIDs)
+        }
+
+        let unmatched = windows.filter { !consumedWindowIDs.contains($0.id) }
+        groups.append(contentsOf: FinderCapturedWindowGrouper.group(unmatched).map {
+            CaptureGroup(windows: $0, snapshot: nil)
+        })
+        return groups
+    }
+
+    private static func selectedRawWindow(
+        from windows: [FinderCapturedWindowPayload],
+        snapshot: FinderCapturedTabSnapshot?
+    ) -> FinderCapturedWindowPayload? {
+        guard let snapshot,
+              snapshot.windowIDs.indices.contains(snapshot.selectedTabIndex) else {
+            return windows.first
+        }
+        let selectedID = snapshot.windowIDs[snapshot.selectedTabIndex]
+        return windows.first { $0.id == selectedID } ?? windows.first
     }
 }
