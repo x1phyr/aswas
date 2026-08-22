@@ -78,11 +78,16 @@
 "workspace.delete_message" = "The workspace file will be removed after a backup is created.";
 "workspace.open_finder" = "Open in Finder";
 "workspace.open_finder_short" = "Open";
+"workspace.open_window" = "Open Window";
+"workspace.open_window_help" = "Open only this window with all of its saved tabs.";
 
 "replace.title" = "Replace Current Finder Windows?";
 "replace.confirm" = "Close Current Windows and Restore";
 "replace.preview" = "aswas will close %d readable Finder windows before restoring %@:\n%@%@";
 "replace.more" = "\n…and %d more";
+
+"notice.window_opened_title" = "Window Opened";
+"notice.window_opened_message" = "Opened %d tabs from %@.%@";
 
 "settings.general" = "General";
 "settings.permissions" = "Permissions";

@@ -78,11 +78,16 @@
 "workspace.delete_message" = "删除前会先备份工作区文件。";
 "workspace.open_finder" = "在 Finder 中打开";
 "workspace.open_finder_short" = "打开";
+"workspace.open_window" = "打开窗口";
+"workspace.open_window_help" = "仅打开这个窗口及其中保存的全部标签页。";
 
 "replace.title" = "替换当前 Finder 窗口？";
 "replace.confirm" = "关闭当前窗口并恢复";
 "replace.preview" = "aswas 将关闭 %d 个可读取的 Finder 窗口，然后恢复 %@：\n%@%@";
 "replace.more" = "\n……以及另外 %d 个";
+
+"notice.window_opened_title" = "窗口已打开";
+"notice.window_opened_message" = "已打开 %d 个来自“%@”的标签页。%@";
 
 "settings.general" = "通用";
 "settings.permissions" = "权限";

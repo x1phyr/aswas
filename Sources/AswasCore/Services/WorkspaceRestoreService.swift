@@ -33,11 +33,36 @@ public actor WorkspaceRestoreService {
 
         let workspace = try await repository.load(id: id)
         try WorkspaceValidator.validate(workspace)
-        let prepared = await prepareForRestore(workspace.finder)
+        let result = try await restore(workspace.finder, mode: mode)
+        AswasLog.restore.info("Restore completed with \(result.restoredWindowCount) windows and \(result.skippedPaths.count) skipped paths")
+        return result
+    }
+
+    public func restore(window: FinderWindowState) async throws -> FinderRestoreResult {
+        guard !isRestoring else {
+            throw FinderIntegrationError.operationInProgress
+        }
+        isRestoring = true
+        defer { isRestoring = false }
+
+        let state = FinderWorkspaceState(windows: [window])
+        try WorkspaceValidator.validate(
+            WorkspaceSnapshot(name: "Window", finder: state)
+        )
+        AswasLog.restore.info("Starting open restore for one saved Finder window")
+        let result = try await restore(state, mode: .open)
+        AswasLog.restore.info("Window restore completed with \(result.restoredTabCount) tabs")
+        return result
+    }
+
+    private func restore(
+        _ state: FinderWorkspaceState,
+        mode: RestoreMode
+    ) async throws -> FinderRestoreResult {
+        let prepared = await prepareForRestore(state)
         var result = try await integration.restore(prepared.state, mode: mode)
         result.skippedPaths.append(contentsOf: prepared.skippedPaths)
         result.warnings.insert(contentsOf: prepared.warnings, at: 0)
-        AswasLog.restore.info("Restore completed with \(result.restoredWindowCount) windows and \(result.skippedPaths.count) skipped paths")
         return result
     }
 

@@ -214,6 +214,26 @@ final class AppState {
         }
     }
 
+    func openWindow(_ window: FinderWindowState, from workspace: WorkspaceSnapshot) async {
+        guard await prepareTabRestoreIfNeeded(for: window) else { return }
+        guard beginOperation() else { return }
+        defer { endOperation() }
+        do {
+            let result = try await restoreService.restore(window: window)
+            notice = UserFacingNotice(
+                title: L10n.text("notice.window_opened_title"),
+                message: L10n.text(
+                    "notice.window_opened_message",
+                    result.restoredTabCount,
+                    workspace.name,
+                    warningSuffix(result.warnings, errors: result.errors)
+                )
+            )
+        } catch {
+            showError(error)
+        }
+    }
+
     func confirmReplace(_ pending: PendingReplace) async {
         pendingReplace = nil
         await performRestore(pending.workspace, mode: .replace)
@@ -263,6 +283,15 @@ final class AppState {
             return true
         }
 
+        return await prepareTabRestore()
+    }
+
+    private func prepareTabRestoreIfNeeded(for window: FinderWindowState) async -> Bool {
+        guard window.tabs.count > 1 else { return true }
+        return await prepareTabRestore()
+    }
+
+    private func prepareTabRestore() async -> Bool {
         capabilities = await integration.checkCapabilities()
         guard !capabilities.canRestoreTabs else { return true }
 

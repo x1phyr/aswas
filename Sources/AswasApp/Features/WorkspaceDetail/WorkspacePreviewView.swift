@@ -77,7 +77,13 @@ struct WorkspacePreviewView: View {
 
             LazyVStack(spacing: 10) {
                 ForEach(Array(workspace.finder.windows.enumerated()), id: \.element.id) { index, window in
-                    WindowPreviewSection(index: index, window: window)
+                    WindowPreviewSection(
+                        index: index,
+                        window: window,
+                        isOperating: appState.isOperating
+                    ) {
+                        Task { await appState.openWindow(window, from: workspace) }
+                    }
                 }
             }
         }
@@ -139,6 +145,8 @@ struct WorkspacePreviewView: View {
 private struct WindowPreviewSection: View {
     let index: Int
     let window: FinderWindowState
+    let isOperating: Bool
+    let openWindow: () -> Void
     @State private var isExpanded = true
 
     var body: some View {
@@ -167,6 +175,14 @@ private struct WindowPreviewSection: View {
                         .truncationMode(.middle)
                         .frame(maxWidth: 260, alignment: .trailing)
                 }
+                Button(action: openWindow) {
+                    Label(L10n.text("workspace.open_window"), systemImage: "arrow.up.forward.app")
+                }
+                .buttonStyle(.bordered)
+                .controlSize(.small)
+                .disabled(isOperating)
+                .help(L10n.text("workspace.open_window_help"))
+                .accessibilityLabel(L10n.text("workspace.open_window"))
             }
             .padding(.vertical, 3)
         }

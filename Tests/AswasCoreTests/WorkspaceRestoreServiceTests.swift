@@ -137,6 +137,42 @@ struct WorkspaceRestoreServiceTests {
         await integration.releaseRestore()
         _ = try await firstRestore.value
     }
+
+    @Test
+    func restoresOnlyTheSelectedWindowAndAllOfItsAvailableTabs() async throws {
+        let directory = try makeTemporaryDirectory()
+        defer { try? FileManager.default.removeItem(at: directory) }
+        let repository = JSONWorkspaceRepository(rootDirectory: directory)
+        let integration = RestoreIntegrationStub()
+        let selectedWindow = FinderWindowState(
+            tabs: [
+                FinderTabState(path: "/Projects/One"),
+                FinderTabState(path: "/Projects/Two")
+            ],
+            selectedTabIndex: 1,
+            frame: nil,
+            normalizedFrame: nil,
+            display: nil,
+            viewMode: .list
+        )
+        let service = WorkspaceRestoreService(
+            integration: integration,
+            repository: repository,
+            pathChecker: RestorePathCheckerStub(
+                available: ["/Projects/One", "/Projects/Two"]
+            ),
+            displayProvider: RestoreDisplayProviderStub(
+                value: DisplaySnapshot(displays: [], mainDisplayID: nil)
+            )
+        )
+
+        let result = try await service.restore(window: selectedWindow)
+
+        let restored = await integration.restoredState
+        #expect(result.restoredWindowCount == 1)
+        #expect(result.restoredTabCount == 2)
+        #expect(restored?.windows == [selectedWindow])
+    }
 }
 
 private actor SuspendingRestoreIntegrationStub: FinderWorkspaceIntegration {
