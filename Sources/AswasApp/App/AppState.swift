@@ -26,6 +26,7 @@ struct PendingMenuSave: Equatable {
 final class AppState {
     var workspaces: [WorkspaceSnapshot] = []
     var isOperating = false
+    var isAwaitingAccessibilityPermission = false
     var notice: UserFacingNotice?
     var pendingMenuSave: PendingMenuSave?
     var pendingReplace: PendingReplace?
@@ -98,12 +99,19 @@ final class AppState {
         let status = await integration.requestAccessibilityPermission()
         isOperating = false
         capabilities = await integration.checkCapabilities()
-        if status != .granted {
-            notice = UserFacingNotice(
-                title: L10n.text("notice.accessibility_title"),
-                message: L10n.text("notice.accessibility_message")
-            )
-        }
+        isAwaitingAccessibilityPermission = status != .granted
+    }
+
+    func recheckPermissions() async {
+        capabilities = await integration.checkCapabilities()
+        isAwaitingAccessibilityPermission = false
+    }
+
+    func openAccessibilitySettings() {
+        guard let url = URL(
+            string: "x-apple.systempreferences:com.apple.preference.security?Privacy_Accessibility"
+        ) else { return }
+        NSWorkspace.shared.open(url)
     }
 
     func saveWorkspace(named name: String, closeAfterSave: Bool) async {
@@ -305,12 +313,10 @@ final class AppState {
         _ = await integration.requestAccessibilityPermission()
         capabilities = await integration.checkCapabilities()
         guard capabilities.canRestoreTabs else {
-            notice = UserFacingNotice(
-                title: L10n.text("notice.accessibility_restore_title"),
-                message: L10n.text("notice.accessibility_restore_message")
-            )
+            isAwaitingAccessibilityPermission = true
             return false
         }
+        isAwaitingAccessibilityPermission = false
         return true
     }
 

@@ -26,6 +26,10 @@ Verify:
 4. Grant permission in System Settings, choose Check Again, and verify Granted.
 5. Revoke permission while the app is running and verify the next operation fails cleanly.
 
+When requesting Accessibility permission, verify the macOS prompt remains frontmost,
+the app shows an inline waiting state instead of another alert, and returning to the
+app refreshes the permission status.
+
 Do not grant Accessibility for the baseline run. It should show Not Required.
 
 ## 3. Save and persistence

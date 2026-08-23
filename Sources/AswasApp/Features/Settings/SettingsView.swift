@@ -46,23 +46,42 @@ struct SettingsView: View {
                     Text(accessibilityStatus)
                         .foregroundStyle(appState.capabilities.accessibilityPermission == .granted ? .green : .orange)
                 }
-                HStack {
-                    Button(L10n.text("settings.request_permission")) {
-                        Task { await appState.requestAutomationPermission() }
+                VStack(alignment: .leading, spacing: 8) {
+                    HStack {
+                        Button(L10n.text("settings.request_permission")) {
+                            Task { await appState.requestAutomationPermission() }
+                        }
+                        Button(L10n.text("settings.request_accessibility")) {
+                            Task { await appState.requestAccessibilityPermission() }
+                        }
+                        .disabled(appState.isOperating || appState.isAwaitingAccessibilityPermission)
                     }
-                    Button(L10n.text("settings.request_accessibility")) {
-                        Task { await appState.requestAccessibilityPermission() }
-                    }
-                    Button(L10n.text("settings.check_again")) {
-                        Task { await appState.refresh() }
+                    HStack {
+                        Button(L10n.text("settings.check_again")) {
+                            Task { await appState.recheckPermissions() }
+                        }
+                        if appState.capabilities.accessibilityPermission != .granted,
+                           !appState.isAwaitingAccessibilityPermission {
+                            Button(L10n.text("settings.open_accessibility_settings")) {
+                                appState.openAccessibilitySettings()
+                            }
+                        }
                     }
                 }
-                Text(L10n.text("settings.accessibility_explanation"))
+                Text(appState.isAwaitingAccessibilityPermission
+                    ? L10n.text("settings.accessibility_waiting_explanation")
+                    : L10n.text("settings.accessibility_explanation"))
                     .font(.caption)
                     .foregroundStyle(.secondary)
             }
             .padding(20)
             .tabItem { Label(L10n.text("settings.permissions"), systemImage: "lock.shield") }
+            .onReceive(NotificationCenter.default.publisher(
+                for: NSApplication.didBecomeActiveNotification
+            )) { _ in
+                guard appState.isAwaitingAccessibilityPermission else { return }
+                Task { await appState.recheckPermissions() }
+            }
 
             Form {
                 Button(L10n.text("settings.open_data")) {
@@ -89,7 +108,10 @@ struct SettingsView: View {
     }
 
     private var accessibilityStatus: String {
-        switch appState.capabilities.accessibilityPermission {
+        if appState.isAwaitingAccessibilityPermission {
+            return L10n.text("status.awaiting_permission")
+        }
+        return switch appState.capabilities.accessibilityPermission {
         case .notRequired: L10n.text("status.not_required")
         case .required: L10n.text("status.required")
         case .granted: L10n.text("status.granted")

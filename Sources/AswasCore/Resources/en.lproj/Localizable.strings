@@ -103,14 +103,17 @@
 "settings.accessibility" = "Accessibility";
 "settings.request_permission" = "Request Finder Permission";
 "settings.request_accessibility" = "Request Accessibility";
+"settings.open_accessibility_settings" = "Open System Settings";
 "settings.check_again" = "Check Again";
 "settings.accessibility_explanation" = "Accessibility enables complete Finder tab capture and restore. Without it, aswas continues to save each window's active folder only.";
+"settings.accessibility_waiting_explanation" = "Complete the macOS permission prompt first. aswas will check again when you return; it will not place another dialog over the system prompt.";
 "settings.open_data" = "Open Workspace Data Folder";
 "status.granted" = "Granted";
 "status.not_requested" = "Not Requested";
 "status.denied" = "Denied";
 "status.finder_unavailable" = "Finder Unavailable";
 "status.unknown" = "Unknown";
+"status.awaiting_permission" = "Waiting for approval";
 "status.not_required" = "Not Required";
 "status.required" = "Required";
 

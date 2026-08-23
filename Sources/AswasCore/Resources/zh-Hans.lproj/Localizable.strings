@@ -103,14 +103,17 @@
 "settings.accessibility" = "辅助功能";
 "settings.request_permission" = "请求 Finder 权限";
 "settings.request_accessibility" = "请求辅助功能权限";
+"settings.open_accessibility_settings" = "打开系统设置";
 "settings.check_again" = "重新检查";
 "settings.accessibility_explanation" = "辅助功能权限用于完整保存和恢复 Finder 标签页。未授权时，aswas 仍会保存每个窗口当前活动的文件夹。";
+"settings.accessibility_waiting_explanation" = "请先完成 macOS 系统授权提示；返回 aswas 后会自动重新检查，不会再用应用弹窗覆盖系统提示。";
 "settings.open_data" = "打开工作区数据文件夹";
 "status.granted" = "已授权";
 "status.not_requested" = "尚未请求";
 "status.denied" = "已拒绝";
 "status.finder_unavailable" = "Finder 不可用";
 "status.unknown" = "未知";
+"status.awaiting_permission" = "等待系统授权";
 "status.not_required" = "不需要";
 "status.required" = "需要";
 
