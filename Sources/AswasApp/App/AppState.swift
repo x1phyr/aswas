@@ -15,12 +15,19 @@ struct PendingReplace: Equatable {
     var preview: FinderCaptureResult
 }
 
+struct PendingMenuSave: Equatable {
+    let id = UUID()
+    var closeAfterSave: Bool
+    var suggestedName: String
+}
+
 @MainActor
 @Observable
 final class AppState {
     var workspaces: [WorkspaceSnapshot] = []
     var isOperating = false
     var notice: UserFacingNotice?
+    var pendingMenuSave: PendingMenuSave?
     var pendingReplace: PendingReplace?
     var pendingDelete: WorkspaceSnapshot?
     var capabilities = FinderCapabilities(

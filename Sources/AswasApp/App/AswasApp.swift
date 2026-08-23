@@ -25,6 +25,12 @@ struct AswasApp: App {
         }
         .defaultSize(width: 1120, height: 720)
 
+        Window(L10n.text("save.title"), id: "menu-save") {
+            MenuBarSaveView(appState: appState)
+                .id(appLanguage)
+        }
+        .windowResizability(.contentSize)
+
         Settings {
             SettingsView(appState: appState)
                 .id(appLanguage)

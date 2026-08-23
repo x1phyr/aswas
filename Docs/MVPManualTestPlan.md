@@ -31,12 +31,14 @@ Do not grant Accessibility for the baseline run. It should show Not Required.
 ## 3. Save and persistence
 
 1. Open one Finder window for a folder with spaces and Unicode characters.
-2. Save it as a named workspace.
-3. Verify window/folder counts and the details path.
-4. Quit and relaunch `aswas`; verify the workspace remains.
-5. Rename the workspace and confirm its JSON filename remains the UUID.
-6. Update from current Finder windows and verify a backup file is created.
-7. Delete the workspace and verify its last JSON was backed up first.
+2. Close the main app window, choose Save Current from the menu bar, and verify a naming window appears.
+3. Save it as a named workspace and verify the result remains visible after the menu closes.
+4. Repeat with Save & Close; verify Finder windows close only after a successful save.
+5. Verify window/folder counts and the details path.
+6. Quit and relaunch `aswas`; verify the workspace remains.
+7. Rename the workspace and confirm its JSON filename remains the UUID.
+8. Update from current Finder windows and verify a backup file is created.
+9. Delete the workspace and verify its last JSON was backed up first.
 
 ## 4. Open restore
 

@@ -6,9 +6,6 @@ struct MenuBarContent: View {
     @Environment(\.openWindow) private var openWindow
     @Environment(\.openSettings) private var openSettings
     @AppStorage("defaultRestoreMode") private var defaultRestoreMode = RestoreMode.open.rawValue
-    @State private var showingSavePrompt = false
-    @State private var showingSaveAndClosePrompt = false
-    @State private var workspaceName = ""
 
     private var restoreMode: RestoreMode {
         RestoreMode(rawValue: defaultRestoreMode) ?? .open
@@ -36,12 +33,11 @@ struct MenuBarContent: View {
 
         Divider()
         Button(L10n.text("menu.save_current")) {
-            workspaceName = suggestedName()
-            showingSavePrompt = true
+            presentSave(closeAfterSave: false)
         }
+        .disabled(appState.isOperating)
         Button(L10n.text("menu.save_close")) {
-            workspaceName = suggestedName()
-            showingSaveAndClosePrompt = true
+            presentSave(closeAfterSave: true)
         }
         .disabled(appState.isOperating)
 
@@ -55,33 +51,16 @@ struct MenuBarContent: View {
             openSettings()
         }
         Button(L10n.text("menu.quit")) { NSApp.terminate(nil) }
-
-        promptAlerts
     }
 
-    @ViewBuilder
-    private var promptAlerts: some View {
-        EmptyView()
-            .alert(L10n.text("save.title"), isPresented: $showingSavePrompt) {
-                TextField(L10n.text("common.workspace_name"), text: $workspaceName)
-                Button(L10n.text("common.cancel"), role: .cancel) {}
-                Button(L10n.text("common.save")) {
-                    Task { await appState.saveWorkspace(named: workspaceName, closeAfterSave: false) }
-                }
-                .disabled(workspaceName.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty)
-            } message: {
-                Text(L10n.text("save.message"))
-            }
-            .alert(L10n.text("save.close_title"), isPresented: $showingSaveAndClosePrompt) {
-                TextField(L10n.text("common.workspace_name"), text: $workspaceName)
-                Button(L10n.text("common.cancel"), role: .cancel) {}
-                Button(L10n.text("save.close_title")) {
-                    Task { await appState.saveWorkspace(named: workspaceName, closeAfterSave: true) }
-                }
-                .disabled(workspaceName.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty)
-            } message: {
-                Text(L10n.text("save.close_message"))
-            }
+    private func presentSave(closeAfterSave: Bool) {
+        appState.notice = nil
+        appState.pendingMenuSave = PendingMenuSave(
+            closeAfterSave: closeAfterSave,
+            suggestedName: suggestedName()
+        )
+        NSApp.activate(ignoringOtherApps: true)
+        openWindow(id: "menu-save")
     }
 
     private func suggestedName() -> String {
