@@ -9,30 +9,38 @@ struct WorkspaceListView: View {
     @State private var searchText = ""
     @State private var promptMode: NamePromptMode?
     @State private var draftName = ""
+    @State private var isSidebarVisible = true
 
     var body: some View {
-        NavigationSplitView {
-            workspaceLibrary
-                .navigationSplitViewColumnWidth(min: 260, ideal: 320, max: 400)
-        } detail: {
-            if let workspace = selectedWorkspace {
-                WorkspacePreviewView(
-                    workspace: workspace,
-                    appState: appState,
-                    rename: { beginRename(workspace) },
-                    delete: { appState.pendingDelete = workspace }
-                )
-                .id(workspace.id)
-            } else {
-                ContentUnavailableView {
-                    Label(L10n.text("workspace.select_title"), systemImage: "square.stack.3d.up")
-                } description: {
-                    Text(L10n.text("workspace.select_description"))
-                }
+        HStack(spacing: 0) {
+            if isSidebarVisible {
+                workspaceLibrary
+                    .frame(width: 320)
+                    .background(SidebarMaterialBackground())
+                    .overlay(alignment: .trailing) {
+                        SidebarHairline()
+                    }
+                    .transition(.move(edge: .leading).combined(with: .opacity))
             }
+
+            detailContent
+                .frame(maxWidth: .infinity, maxHeight: .infinity)
         }
-        .navigationSplitViewStyle(.balanced)
+        .background(Color(nsColor: .windowBackgroundColor))
         .toolbar {
+            ToolbarItem(placement: .navigation) {
+                Button {
+                    withAnimation(.easeInOut(duration: 0.18)) {
+                        isSidebarVisible.toggle()
+                    }
+                } label: {
+                    Image(systemName: "sidebar.leading")
+                }
+                .help(L10n.text(isSidebarVisible
+                    ? "workspace.hide_sidebar"
+                    : "workspace.show_sidebar"))
+            }
+
             ToolbarItem(placement: .primaryAction) {
                 saveMenu
             }
@@ -85,19 +93,32 @@ struct WorkspaceListView: View {
         }
     }
 
+    @ViewBuilder
+    private var detailContent: some View {
+        if let workspace = selectedWorkspace {
+            WorkspacePreviewView(
+                workspace: workspace,
+                appState: appState,
+                rename: { beginRename(workspace) },
+                delete: { appState.pendingDelete = workspace }
+            )
+            .id(workspace.id)
+        } else if appState.workspaces.isEmpty {
+            WorkspaceWelcomeView {
+                beginSave(closeAfterSave: false)
+            }
+        } else {
+            WorkspaceSelectionPlaceholder()
+        }
+    }
+
     private var workspaceLibrary: some View {
         VStack(spacing: 0) {
+            libraryHeader
+
             Group {
                 if appState.workspaces.isEmpty {
-                    ContentUnavailableView {
-                        Label(L10n.text("empty.title"), systemImage: "folder.badge.plus")
-                    } description: {
-                        Text(L10n.text("empty.description"))
-                    } actions: {
-                        Button(L10n.text("save.current_workspace")) {
-                            beginSave(closeAfterSave: false)
-                        }
-                    }
+                    WorkspaceLibraryEmptyState()
                 } else {
                     List(filteredWorkspaces, selection: $selectedWorkspaceID) { workspace in
                         WorkspaceRow(workspace: workspace)
@@ -116,7 +137,39 @@ struct WorkspaceListView: View {
 
             permissionFooter
         }
-        .navigationTitle(L10n.text("workspace.library_title"))
+    }
+
+    private var libraryHeader: some View {
+        HStack(spacing: 12) {
+            VStack(alignment: .leading, spacing: 3) {
+                Text(L10n.text("workspace.library_title"))
+                    .font(.title3.weight(.semibold))
+                Text(appState.workspaces.isEmpty
+                    ? L10n.text("workspace.library_empty_count")
+                    : L10n.text("workspace.library_count", appState.workspaces.count))
+                    .font(.caption)
+                    .foregroundStyle(.secondary)
+            }
+
+            Spacer(minLength: 8)
+
+            Button {
+                beginSave(closeAfterSave: false)
+            } label: {
+                Image(systemName: "plus")
+                    .font(.system(size: 12, weight: .semibold))
+                    .frame(width: 28, height: 26)
+                    .background(Color.primary.opacity(0.07), in: RoundedRectangle(cornerRadius: 7))
+            }
+            .buttonStyle(.borderless)
+            .help(L10n.text("save.current_workspace"))
+            .disabled(appState.isOperating)
+        }
+        .padding(.horizontal, 14)
+        .padding(.vertical, 12)
+        .overlay(alignment: .bottom) {
+            SidebarHairline(axis: .horizontal)
+        }
     }
 
     private var saveMenu: some View {
@@ -132,7 +185,7 @@ struct WorkspaceListView: View {
 
     private var permissionFooter: some View {
         VStack(spacing: 0) {
-            Divider()
+            SidebarHairline(axis: .horizontal)
             HStack(spacing: 8) {
                 Image(systemName: permissionsReady ? "checkmark.circle.fill" : "exclamationmark.circle.fill")
                     .foregroundStyle(permissionsReady ? Color.green : Color.orange)
@@ -154,9 +207,8 @@ struct WorkspaceListView: View {
                 .buttonStyle(.borderless)
                 .font(.caption)
             }
-            .padding(.horizontal, 12)
+            .padding(.horizontal, 14)
             .padding(.vertical, 10)
-            .background(.bar)
         }
     }
 
@@ -291,6 +343,196 @@ struct WorkspaceListView: View {
         case nil:
             break
         }
+    }
+}
+
+private struct SidebarMaterialBackground: NSViewRepresentable {
+    func makeNSView(context: Context) -> NSVisualEffectView {
+        let view = NSVisualEffectView()
+        view.material = .sidebar
+        view.blendingMode = .behindWindow
+        view.state = .followsWindowActiveState
+        return view
+    }
+
+    func updateNSView(_ nsView: NSVisualEffectView, context: Context) {}
+}
+
+private struct SidebarHairline: View {
+    enum Axis {
+        case horizontal
+        case vertical
+    }
+
+    var axis: Axis = .vertical
+
+    var body: some View {
+        Rectangle()
+            .fill(Color(nsColor: .separatorColor).opacity(0.32))
+            .frame(
+                width: axis == .vertical ? 0.5 : nil,
+                height: axis == .horizontal ? 0.5 : nil
+            )
+            .accessibilityHidden(true)
+    }
+}
+
+private struct WorkspaceLibraryEmptyState: View {
+    var body: some View {
+        VStack(spacing: 14) {
+            Image(systemName: "folder")
+                .font(.system(size: 25, weight: .medium))
+                .foregroundStyle(Color.accentColor)
+                .frame(width: 58, height: 58)
+                .background(Color.accentColor.opacity(0.12), in: RoundedRectangle(cornerRadius: 15))
+
+            VStack(spacing: 6) {
+                Text(L10n.text("empty.title"))
+                    .font(.headline)
+                Text(L10n.text("empty.sidebar_description"))
+                    .font(.subheadline)
+                    .foregroundStyle(.secondary)
+                    .multilineTextAlignment(.center)
+                    .lineSpacing(2)
+                    .fixedSize(horizontal: false, vertical: true)
+            }
+        }
+        .frame(maxWidth: 230)
+        .padding(.horizontal, 24)
+        .frame(maxWidth: .infinity, maxHeight: .infinity)
+        .accessibilityElement(children: .combine)
+    }
+}
+
+private struct WorkspaceWelcomeView: View {
+    let save: () -> Void
+
+    var body: some View {
+        ScrollView {
+            VStack(spacing: 24) {
+                Image(systemName: "folder.badge.plus")
+                    .symbolRenderingMode(.hierarchical)
+                    .font(.system(size: 44, weight: .medium))
+                    .foregroundStyle(Color.accentColor)
+                    .frame(width: 96, height: 96)
+                    .background(Color.accentColor.opacity(0.11), in: RoundedRectangle(cornerRadius: 24))
+                    .overlay {
+                        RoundedRectangle(cornerRadius: 24)
+                            .stroke(Color.accentColor.opacity(0.18), lineWidth: 1)
+                    }
+
+                VStack(spacing: 9) {
+                    Text(L10n.text("empty.welcome_title"))
+                        .font(.system(size: 28, weight: .bold))
+                        .multilineTextAlignment(.center)
+                    Text(L10n.text("empty.welcome_description"))
+                        .font(.body)
+                        .foregroundStyle(.secondary)
+                        .multilineTextAlignment(.center)
+                        .lineSpacing(3)
+                        .fixedSize(horizontal: false, vertical: true)
+                }
+                .frame(maxWidth: 510)
+
+                Button(action: save) {
+                    Label(L10n.text("save.current_workspace"), systemImage: "plus")
+                        .font(.body.weight(.semibold))
+                        .padding(.horizontal, 6)
+                }
+                .buttonStyle(.borderedProminent)
+                .controlSize(.large)
+                .keyboardShortcut("s", modifiers: [.command])
+
+                HStack(alignment: .top, spacing: 12) {
+                    featureCards
+                }
+                .frame(maxWidth: 570)
+            }
+            .padding(.horizontal, 36)
+            .padding(.vertical, 54)
+            .frame(maxWidth: .infinity, minHeight: 600)
+        }
+        .background(Color(nsColor: .windowBackgroundColor))
+    }
+
+    @ViewBuilder
+    private var featureCards: some View {
+        WorkspaceFeatureCard(
+            icon: "macwindow.on.rectangle",
+            titleKey: "empty.feature_windows_title",
+            descriptionKey: "empty.feature_windows_description"
+        )
+        WorkspaceFeatureCard(
+            icon: "square.stack.3d.up",
+            titleKey: "empty.feature_tabs_title",
+            descriptionKey: "empty.feature_tabs_description"
+        )
+        WorkspaceFeatureCard(
+            icon: "arrow.clockwise",
+            titleKey: "empty.feature_restore_title",
+            descriptionKey: "empty.feature_restore_description"
+        )
+    }
+}
+
+private struct WorkspaceFeatureCard: View {
+    let icon: String
+    let titleKey: String
+    let descriptionKey: String
+
+    var body: some View {
+        VStack(alignment: .leading, spacing: 12) {
+            Image(systemName: icon)
+                .font(.system(size: 17, weight: .semibold))
+                .foregroundStyle(Color.accentColor)
+                .frame(width: 34, height: 34)
+                .background(Color.accentColor.opacity(0.10), in: RoundedRectangle(cornerRadius: 9))
+
+            VStack(alignment: .leading, spacing: 4) {
+                Text(L10n.text(titleKey))
+                    .font(.subheadline.weight(.semibold))
+                Text(L10n.text(descriptionKey))
+                    .font(.caption)
+                    .foregroundStyle(.secondary)
+                    .lineSpacing(2)
+                    .fixedSize(horizontal: false, vertical: true)
+            }
+        }
+        .frame(minWidth: 130, maxWidth: .infinity, minHeight: 112, alignment: .topLeading)
+        .padding(16)
+        .background(.quaternary.opacity(0.35), in: RoundedRectangle(cornerRadius: 14))
+        .overlay {
+            RoundedRectangle(cornerRadius: 14)
+                .stroke(Color.primary.opacity(0.07), lineWidth: 1)
+        }
+    }
+}
+
+private struct WorkspaceSelectionPlaceholder: View {
+    var body: some View {
+        VStack(spacing: 18) {
+            Image(systemName: "square.stack.3d.up")
+                .symbolRenderingMode(.hierarchical)
+                .font(.system(size: 36, weight: .medium))
+                .foregroundStyle(Color.accentColor)
+                .frame(width: 78, height: 78)
+                .background(Color.accentColor.opacity(0.10), in: RoundedRectangle(cornerRadius: 20))
+
+            VStack(spacing: 7) {
+                Text(L10n.text("workspace.select_title"))
+                    .font(.title2.weight(.semibold))
+                Text(L10n.text("workspace.select_description"))
+                    .font(.body)
+                    .foregroundStyle(.secondary)
+                    .multilineTextAlignment(.center)
+                    .lineSpacing(2)
+            }
+            .frame(maxWidth: 440)
+        }
+        .padding(40)
+        .frame(maxWidth: .infinity, maxHeight: .infinity)
+        .background(Color(nsColor: .windowBackgroundColor))
+        .accessibilityElement(children: .combine)
     }
 }
 

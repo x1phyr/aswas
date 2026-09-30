@@ -33,10 +33,23 @@
 
 "empty.title" = "还没有工作区";
 "empty.description" = "保存当前 Finder 窗口，之后随时恢复工作现场。";
+"empty.sidebar_description" = "保存后，工作区会按更新时间显示在这里。";
+"empty.welcome_title" = "保存你的第一个工作区";
+"empty.welcome_description" = "记录当前 Finder 的窗口、标签页与位置。下次需要时，一次恢复熟悉的工作现场。";
+"empty.feature_windows_title" = "保留窗口布局";
+"empty.feature_windows_description" = "记录每个 Finder 窗口的位置与大小。";
+"empty.feature_tabs_title" = "记住标签页";
+"empty.feature_tabs_description" = "保存标签页顺序与上次选中项。";
+"empty.feature_restore_title" = "随时恢复";
+"empty.feature_restore_description" = "追加打开，或替换当前 Finder 窗口。";
 
 "workspace.summary" = "%d 个窗口 · %d 个标签页";
 "workspace.detail_summary" = "%d 个窗口 · %d 个标签页";
 "workspace.library_title" = "工作区";
+"workspace.library_empty_count" = "尚未保存";
+"workspace.library_count" = "%d 个已保存";
+"workspace.hide_sidebar" = "隐藏侧栏";
+"workspace.show_sidebar" = "显示侧栏";
 "workspace.search_prompt" = "搜索工作区或路径";
 "workspace.select_title" = "选择一个工作区";
 "workspace.select_description" = "在左侧选择工作区，查看保存的窗口和标签页。";

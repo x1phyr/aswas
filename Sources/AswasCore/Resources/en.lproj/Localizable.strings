@@ -33,10 +33,23 @@
 
 "empty.title" = "No Workspaces Yet";
 "empty.description" = "Save your current Finder windows, then restore them whenever you need.";
+"empty.sidebar_description" = "Saved workspaces will appear here, ordered by their latest update.";
+"empty.welcome_title" = "Save Your First Workspace";
+"empty.welcome_description" = "Capture your current Finder windows, tabs, and positions. Restore the same setup whenever you need it.";
+"empty.feature_windows_title" = "Keep the Layout";
+"empty.feature_windows_description" = "Remember the position and size of every Finder window.";
+"empty.feature_tabs_title" = "Remember Tabs";
+"empty.feature_tabs_description" = "Save tab order and the last selected tab.";
+"empty.feature_restore_title" = "Restore Anytime";
+"empty.feature_restore_description" = "Open alongside current windows or replace them.";
 
 "workspace.summary" = "%d windows · %d tabs";
 "workspace.detail_summary" = "%d windows · %d tabs";
 "workspace.library_title" = "Workspaces";
+"workspace.library_empty_count" = "Nothing saved yet";
+"workspace.library_count" = "%d saved";
+"workspace.hide_sidebar" = "Hide Sidebar";
+"workspace.show_sidebar" = "Show Sidebar";
 "workspace.search_prompt" = "Search workspaces or paths";
 "workspace.select_title" = "Select a Workspace";
 "workspace.select_description" = "Choose a workspace on the left to preview its saved windows and tabs.";
