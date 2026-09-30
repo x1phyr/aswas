@@ -27,8 +27,6 @@
     <string>1</string>
     <key>LSMinimumSystemVersion</key>
     <string>14.0</string>
-    <key>LSUIElement</key>
-    <true/>
     <key>NSAppleEventsUsageDescription</key>
     <string>aswas needs permission to read and restore your Finder windows.</string>
     <key>NSHumanReadableCopyright</key>

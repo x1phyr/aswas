@@ -43,7 +43,7 @@ struct MenuBarContent: View {
 
         Divider()
         Button(L10n.text("menu.open_app")) {
-            NSApp.activate(ignoringOtherApps: true)
+            AppDelegate.prepareToShowMainWindow()
             openWindow(id: "main")
         }
         Button(L10n.text("menu.settings")) {

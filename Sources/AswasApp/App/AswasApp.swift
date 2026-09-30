@@ -13,7 +13,7 @@ struct AswasApp: App {
             MenuBarContent(appState: appState)
                 .id(appLanguage)
         } label: {
-            Label("aswas", systemImage: "folder.badge.gearshape")
+            MenuBarStatusLabel()
         }
         .menuBarExtraStyle(.menu)
 
@@ -36,5 +36,22 @@ struct AswasApp: App {
                 .id(appLanguage)
                 .frame(width: 520, height: 360)
         }
+    }
+}
+
+private struct MenuBarStatusLabel: View {
+    @Environment(\.openWindow) private var openWindow
+
+    var body: some View {
+        Label("aswas", systemImage: "folder.badge.gearshape")
+            .task {
+                guard AppDelegate.consumeInitialMainWindowRequest() else { return }
+                AppDelegate.prepareToShowMainWindow()
+                openWindow(id: "main")
+            }
+            .onReceive(NotificationCenter.default.publisher(for: .aswasShowMainWindow)) { _ in
+                AppDelegate.prepareToShowMainWindow()
+                openWindow(id: "main")
+            }
     }
 }
